@@ -4,7 +4,7 @@
 
 | Location | Contents |
 | --- | --- |
-| `/var/lib/routepilot/snapshot/` | Latest host snapshot and monthly NIC counter |
+| `/var/lib/routepilot/snapshot/` | Latest host snapshot, monthly NIC counter and root-only credential accounting baseline |
 | `/etc/routepilot-report/` | Private reporting credential and settings |
 | `/var/lib/routepilot-devices/` | Root-only device registry and client profiles |
 | `/etc/routepilot-devices/` | Private node-generation settings |

@@ -253,3 +253,11 @@ Node-state color transitions last 180ms with an ease-out curve. Other library tr
 - **Don't** show historical success as current health when evidence is missing or stale.
 - **Don't** use failure colors as decorative accents or turn unknown samples green.
 - **Don't** hard-code account, deployment, or host identifiers into reusable visual examples.
+
+## Host load and private management
+
+Host metrics use the existing unfilled sheet: four columns on desktop and two on mobile. CPU, memory and disk use 4px rails; one-minute system load is numeric. Missing or stale readings show em dashes. The initial skeleton reserves the same space.
+
+The private `/admin/` surface shares the brand, typography and Ant Design theme. It has a compact key form, host metrics and a read-only credential usage table; no sidebar or mutation controls. The table scrolls within its container on narrow screens. Usage is monthly upload/download payload bytes; reset gaps use an asterisk with an explanatory tooltip. No credentials or bearer URLs appear in the UI.
+
+Verified login, logout, table content, metric layout and absence of page overflow at 1404px and 390px. Browser plugin was unavailable; standard Playwright with Chrome was used.

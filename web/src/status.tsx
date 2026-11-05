@@ -11,6 +11,7 @@ import { Globe2 } from 'lucide-react';
 import { readInstances, readStatus } from './data';
 import type { InitialData, Item, Range, State, StatusBundle } from './data';
 import { StatusSkeleton } from './loading.mjs';
+import { HostMetrics } from './load';
 import routeMark from './assets/routepilot-mark.svg';
 import japanFlag from './assets/jp.svg';
 
@@ -47,7 +48,7 @@ const displayPeriod = (start: number, end: number) => {
   return displayTime(start) + ' – ' + ending;
 };
 const number = (value: number) => value.toLocaleString('zh-CN');
-const theme: ThemeConfig = {
+export const theme: ThemeConfig = {
   token: {
     colorPrimary: '#244b3f',
     colorText: '#22392f',
@@ -363,6 +364,7 @@ function StatusPage({ initial }: { initial: InitialData }) {
             </Flex>
           </section>
 
+          <HostMetrics load={expired ? null : data?.load} />
           <section aria-labelledby="history-title" className="history-section">
             <Flex justify="space-between" align="center" gap={16} className="section-heading">
               <h2 id="history-title">稳定性记录</h2>

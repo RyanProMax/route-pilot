@@ -9,6 +9,7 @@ export type Item = {
   devices?: number | null; deviceHistory?: (number | null)[];
 };
 export type Summary = {
+  load?: import('./load').HostLoad | null;
   at: number; start: number; width: number; lastReport: number | null;
   traffic?: { month: string; remainingGB: number; planGB: number } | null;
   checks: Item[]; events: { id: Key; status: State; at: number }[];

@@ -1,5 +1,6 @@
 import { connect } from "cloudflare:sockets";
 import { readStatus } from "./status-cache.mjs";
+import { privateAPI, usageStatements } from "./private-api.mjs";
 
 
 const clock = () => Math.floor(Date.now() / 1000);
@@ -49,14 +50,14 @@ function normalizeReport(input, now) {
   }
   const traffic = Number.isSafeInteger(m.month_tx_bytes) && m.month_tx_bytes >= 0
     ? {month_tx_bytes:m.month_tx_bytes} : {};
-  return {ts:input.ts, metrics:{...Object.fromEntries(["memory_used","memory_total","disk_used","disk_total","load1","cpu_count","uptime_seconds","xray_restarts","connections","proxy_service"].map(k=>[k,m[k]])),...traffic,devices:Number.isSafeInteger(m.devices) && m.devices >= 0 ? m.devices : null,security}};
+  return {ts:input.ts, usage:input.usage, metrics:{...Object.fromEntries(["memory_used","memory_total","disk_used","disk_total","load1","cpu_count","uptime_seconds","xray_restarts","connections","proxy_service"].map(k=>[k,m[k]])),...traffic,cpu_percent:Number.isFinite(m.cpu_percent) && m.cpu_percent>=0 && m.cpu_percent<=100 ? m.cpu_percent : null,devices:Number.isSafeInteger(m.devices) && m.devices >= 0 ? m.devices : null,security}};
 }
 
 async function ingest(request,env) {
   const header = request.headers.get("authorization") || "";
   if (!header.startsWith("Bearer ") || !await authorized(header.slice(7),env.REPORT_SHA256)) return response({error:"Unauthorized"},401);
   if (!request.headers.get("content-type")?.startsWith("application/json")) return response({error:"JSON required"},415);
-  if (Number(request.headers.get("content-length"))>8192) return response({error:"Too large"},413);
+  if (Number(request.headers.get("content-length"))>32768) return response({error:"Too large"},413);
   const reader=request.body?.getReader();
   if (!reader) return response({error:"Empty body"},400);
   let raw="", size=0;
@@ -65,16 +66,19 @@ async function ingest(request,env) {
     const {done,value}=await reader.read();
     if (done) break;
     size+=value.byteLength;
-    if (size>8192) {await reader.cancel();return response({error:"Too large"},413);}
+    if (size>32768) {await reader.cancel();return response({error:"Too large"},413);}
     raw+=decoder.decode(value,{stream:true});
   }
   let report;
   try {report=normalizeReport(JSON.parse(raw+decoder.decode()),clock());}
   catch {return response({error:"Invalid or expired sample"},400);}
   const {ts,metrics}=report;
+  let usage;
+  try {usage=usageStatements(env.DB,report.usage,ts);} catch {return response({error:"Invalid usage"},400);}
   const actual=request.headers.get("cf-connecting-ip") || "";
   const serviceOK=metrics.proxy_service==="active" && metrics.security.public_tcp_ports.includes(Number(env.PORT));
   await env.DB.batch([
+    ...usage,
     env.DB.prepare("INSERT INTO reports(minute,ts,metrics,egress) VALUES(?,?,?,?) ON CONFLICT DO NOTHING")
       .bind(Math.floor(ts/60),ts,JSON.stringify(metrics),actual),
     sample(env,"heartbeat",ts,"ok","已收到 VPS 自检"),
@@ -109,10 +113,16 @@ async function observe(env,now) {
 async function prune(env,now) {
   const cutoff=now-31*86400;
   await env.DB.batch(["DELETE FROM samples WHERE ts<?","DELETE FROM reports WHERE minute<?","DELETE FROM events WHERE ts<?","DELETE FROM buckets WHERE bucket+width<?","DELETE FROM connection_buckets WHERE bucket+width<?"].map((sql,i)=>env.DB.prepare(sql).bind(i===1?Math.floor(cutoff/60):cutoff)));
+  await env.DB.batch([env.DB.prepare('DELETE FROM admin_sessions WHERE expires<?').bind(now),
+    env.DB.prepare('DELETE FROM credential_usage WHERE month<?').bind(new Date((now-366*86400)*1000).toISOString().slice(0,7))]);
 }
 export default {
   async fetch(request,env) {
     const url=new URL(request.url);
+    if (url.pathname.startsWith('/private/') || url.pathname.startsWith('/sub/')) {
+      try {return await privateAPI(request,env,clock());}
+      catch {return response({error:'Unavailable'},503);}
+    }
     if (url.protocol !== "https:") {
       if (!["GET","HEAD"].includes(request.method)) return response({error:"HTTPS required"},403);
       url.protocol = "https:";

@@ -22,8 +22,9 @@ token = args.token_file.read_text().strip()
 if not re.fullmatch(r"[A-Za-z0-9_-]{40,100}",token):
     parser.error("Invalid report credential")
 files = {
+    "/usr/local/libexec/routepilot_accounting.py": ((ROOT/"cloud/routepilot_accounting.py").read_bytes(), 0o644),
     "/usr/local/libexec/routepilot_devices.py": ((ROOT/"cloud/routepilot_devices.py").read_bytes(), 0o644),
-    "/etc/routepilot-report/config.json": (json.dumps({"base_url":"https://"+deployment["status_hostname"],"proxy_port":deployment["instance"]["port"],"stats_port":deployment.get("stats_port",10085)}).encode(), 0o600),
+    "/etc/routepilot-report/config.json": (json.dumps({"base_url":"https://"+deployment["status_hostname"],"proxy_port":deployment["instance"]["port"],"stats_port":deployment.get("stats_port",10085),"xray_service":deployment.get("xray_service","xray")}).encode(), 0o600),
     "/usr/local/libexec/routepilot-metrics": ((ROOT/"ops/metrics.py").read_bytes(), 0o755),
     "/usr/local/libexec/routepilot-snapshot": ((ROOT/"cloud/snapshot.py").read_bytes(), 0o755),
     "/usr/local/libexec/routepilot_traffic.py": ((ROOT/"cloud/routepilot_traffic.py").read_bytes(), 0o644),

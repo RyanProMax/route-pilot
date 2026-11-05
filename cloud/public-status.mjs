@@ -1,4 +1,5 @@
 // The public projection only reads typed measurements. Operational messages and reports stay private.
+import { hostLoad } from './private-api.mjs';
 export const windows = { "24h": 1200, "7d": 8400, "30d": 36000 };
 const ids = { heartbeat: "heartbeat", xray: "service", egress: "egress", edge4: "edge4", edge6: "edge6" };
 const states = new Set(["ok", "degraded", "down", "unknown"]);
@@ -25,7 +26,7 @@ export async function publicSummaries(db, ranges, now, planGB) {
   // Read current measurements once and retain each window's original resolution.
   const [latest, reports, events, ...histories] = await db.batch([
     db.prepare("SELECT check_id, ts, status, latency FROM latest"),
-    db.prepare("SELECT ts, json_extract(metrics, '$.connections') AS connections, json_extract(metrics, '$.devices') AS devices, json_extract(metrics, '$.month_tx_bytes') AS usedBytes FROM reports ORDER BY minute DESC LIMIT 1"),
+    db.prepare("SELECT ts, json_extract(metrics, '$.cpu_percent') AS cpu_percent, json_extract(metrics, '$.load1') AS load1, json_extract(metrics, '$.memory_used') AS memory_used, json_extract(metrics, '$.memory_total') AS memory_total, json_extract(metrics, '$.disk_used') AS disk_used, json_extract(metrics, '$.disk_total') AS disk_total, json_extract(metrics, '$.connections') AS connections, json_extract(metrics, '$.devices') AS devices, json_extract(metrics, '$.month_tx_bytes') AS usedBytes FROM reports ORDER BY minute DESC LIMIT 1"),
     db.prepare("SELECT check_id, status, ts FROM events WHERE ts>=? ORDER BY ts DESC, id DESC LIMIT 60")
       .bind(now - 72 * Math.max(...bounds.map(({ width }) => width))),
     ...bounds.flatMap(({ width, start }) => [
@@ -81,7 +82,7 @@ function summarize(width, start, now, planGB, latest, reports, events, buckets, 
     month, planGB, remainingGB: Math.round(Math.max(0, planGB - report.usedBytes / 1e9))
   } : null;
   return { at: now, start, width, checks, lastReport: report?.ts ?? null,
-    connections: currentConnections, traffic,
+    connections: currentConnections, traffic, load:hostLoad(report ?? {},report?.ts,now),
     events: events.results.filter(e => e.ts >= now - 72 * width && Object.hasOwn(ids, e.check_id)).map(e => ({
       id: ids[e.check_id], status: safeStatus(e.status), at: e.ts
     })) };

@@ -1,11 +1,13 @@
 """Publish the public status page and provision the private reporter credential."""
 import argparse
+import base64
 import hashlib
 import hmac
 import json
 import os
 from pathlib import Path
 import secrets
+import stat
 import shutil
 import subprocess
 import tempfile
@@ -22,12 +24,26 @@ def private_key(state, name):
             file.write(secrets.token_urlsafe(36) + "\n")
     except FileExistsError:
         pass
-    if path.stat().st_mode & 0o077:
+    metadata=path.lstat()
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink!=1 or metadata.st_uid!=os.getuid() or metadata.st_mode & 0o077:
         raise SystemExit(f"Restrict {path} to mode 0600")
     key = path.read_text().strip()
     if len(key) < 40:
         raise SystemExit(f"Invalid credential in {path}")
     return key
+
+
+def private_secrets(state):
+    path = state/'subscription-key'
+    if not path.exists():
+        with path.open('x') as file: file.write(base64.b64encode(secrets.token_bytes(32)).decode()+'\n')
+    metadata=path.lstat()
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink!=1 or metadata.st_uid!=os.getuid() or metadata.st_mode & 0o077: raise ValueError('Encryption key must be private')
+    key = path.read_text().strip()
+    if len(base64.b64decode(key,validate=True)) != 32: raise ValueError('Invalid encryption key')
+    return {'SUBSCRIPTION_KEY':key,
+            'ADMIN_SHA256':hashlib.sha256(private_key(state,'admin-key').encode()).hexdigest(),
+            'PROVISION_SHA256':hashlib.sha256(private_key(state,'provision-key').encode()).hexdigest()}
 
 
 def main():
@@ -55,7 +71,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="routepilot-edge-") as directory:
         stage = Path(directory)
         (stage / "cloud").mkdir()
-        for name in ("wrangler.json", "worker.mjs", "status-site.json", "public-status.mjs", "status-cache.mjs"):
+        for name in ("wrangler.json", "worker.mjs", "status-site.json", "public-status.mjs", "status-cache.mjs", "private-api.mjs"):
             shutil.copyfile(ROOT / "cloud" / name, stage / "cloud" / name)
         shutil.copytree(ROOT / "cloud/migrations", stage / "cloud/migrations")
         (stage/"cloud/wrangler.json").write_text(json.dumps(config))
@@ -73,7 +89,7 @@ def main():
             (stage/"cloud/wrangler.json").write_text(json.dumps(config))
             run("d1","migrations","apply",config["d1_databases"][0]["database_name"],"--remote")
             run("deploy", quiet=True)
-            run("secret","bulk",body=json.dumps({"REPORT_SHA256":digest}))
+            run("secret","bulk",body=json.dumps({"REPORT_SHA256":digest,**private_secrets(state)}))
         if not args.collector_only:
             dist = stage / "web/dist-status"
             shutil.copytree(ROOT / "web/dist-status", dist)

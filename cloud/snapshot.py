@@ -8,8 +8,10 @@ import subprocess
 import tempfile
 import time
 import sys
+import sqlite3
 from routepilot_traffic import record
 from routepilot_devices import collect
+from routepilot_accounting import collect as account
 
 directory = Path("/var/lib/routepilot/snapshot")
 settings = json.loads(Path("/etc/routepilot-report/config.json").read_text())
@@ -26,6 +28,11 @@ try:
 except (OSError, ValueError, subprocess.SubprocessError):
     metrics["devices"] = None
 now = int(time.time())
+usage = None
+try:
+    metrics['cpu_percent'], usage = account(directory, now, int(settings.get('stats_port',10085)), settings.get('xray_service','xray'))
+except (OSError, ValueError, KeyError, sqlite3.Error, subprocess.SubprocessError):
+    print('Credential accounting unavailable', file=sys.stderr)
 try:
     used = record(directory, now)
     if used is not None:
@@ -41,7 +48,9 @@ security["reporter_sandboxed"] = all(properties.get(key) == value for key, value
     "User": "routepilot-report", "NoNewPrivileges": "yes", "ProtectSystem": "strict", "CapabilityBoundingSet": ""}.items())
 metrics["security"] = security
 with tempfile.NamedTemporaryFile(mode="w", dir=directory, delete=False) as file:
-    json.dump({"schema": 1, "ts": now, "metrics": metrics}, file, separators=(",", ":"))
+    payload = {"schema": 1, "ts": now, "metrics": metrics}
+    if usage is not None: payload['usage'] = usage
+    json.dump(payload, file, separators=(",", ":"))
     os.fchown(file.fileno(), 0, grp.getgrnam("routepilot-report").gr_gid)
     os.fchmod(file.fileno(), 0o640)
 os.replace(file.name, directory/"latest.json")

@@ -42,6 +42,7 @@ def cloud_configs(c):
         {'pattern':host+'/status/'+prefix+window+'.json','zone_name':zone}
         for prefix in ('', i['id']+'/') for window in ('24h','7d','30d')]
     worker['routes'].append({'pattern':host+'/status/'+i['id']+'/all.json','zone_name':zone})
+    worker['routes'] += [{'pattern':host+prefix+'*','zone_name':zone} for prefix in ('/sub/','/private/')]
     worker['d1_databases'] = [{'binding':'DB','database_name':c['database']['name'],
         'database_id':c['database']['id'],'migrations_dir':'migrations'}]
     worker['vars'] = {'INSTANCE_ID':i['id'],'IPV4':i['ipv4'],'IPV6':i.get('ipv6',''),

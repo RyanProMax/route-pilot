@@ -15,6 +15,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--config');p.add_argument('--name',required=True);p.add_argument('--client',choices=['clash','shadowrocket'],required=True)
     p.add_argument('--out',required=True,type=Path,help='Private output directory; reused for the same registered device')
+    p.add_argument('--existing-id',help='Refresh only this active identity; never recreate a revoked identity')
     a=p.parse_args();c=load_config(a.config)
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',c['ssh_host']):raise ValueError('Invalid SSH alias')
     out=a.out.expanduser()
@@ -26,16 +27,22 @@ def main():
         previous=json.loads(manifest.read_text()) if manifest.is_file() else {}
         if previous.get('label')!=a.name or previous.get('client')!=a.client:
             raise ValueError('Output directory belongs to another device or contains unmanaged files')
-    q={'label':a.name,'client':a.client}
+    if a.existing_id and not re.fullmatch(r'[a-f0-9]{24}',a.existing_id):raise ValueError('Invalid identity')
+    q={'label':a.name,'client':a.client,'existing_id':a.existing_id}
     script=r'''
 import base64,json,os,sys
 from pathlib import Path
 os.umask(0o077);sys.path.insert(0,'/opt/routepilot')
 from devices.registry import Registry
-from devices.provision import provision
+from devices.provision import provision,_provision
 settings=json.loads(Path('/etc/routepilot-devices/settings.json').read_text())
 r=Registry('/var/lib/routepilot-devices')
-d=provision(r,settings,q['label'],q['client'])
+if q.get('existing_id'):
+    with r.administration():
+        existing=r.find(q['label'])
+        if not existing or existing['id']!=q['existing_id']:raise ValueError('Identity is no longer active')
+        d=_provision(r,settings,q['label'],q['client'])
+else:d=provision(r,settings,q['label'],q['client'])
 formats=['clash.yaml'] if q['client']=='clash' else ['shadowrocket.txt','rules.conf']
 result={'device':{k:d[k] for k in ('id','label','client','created')},'files':{}}
 result['device']['client']=q['client']

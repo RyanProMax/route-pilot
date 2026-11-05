@@ -17,6 +17,8 @@ export function StatusSkeleton() {
         h(Flex, { gap: 9, align: 'center', className: 'traffic-label' }, block(66, 16), block(42, 19)),
         h('div', { className: 'traffic-meter' }, block('100%', 8)),
         h(Flex, { vertical: true, align: 'flex-end', gap: 4, className: 'traffic-summary' }, block(44, 18), block(144, 24))),
+      h('section', { className: 'host-metrics' },
+        ...Array.from({length:4}, (_,i) => h('div', {key:i}, block('100%',14), block('100%',4)))),
       h('section', { className: 'history-section' },
         h(Flex, { justify: 'space-between', align: 'center', gap: 16, className: 'section-heading' }, block(96, 18), block(166, 36)),
         h('div', { className: 'skeleton-table' },

@@ -26,7 +26,7 @@ description: Deploy or repair fixed IPv4 egress on an existing Linux VPS, diagno
 1. **盘点和诊断。** 读取 [diagnostics.md](references/diagnostics.md)。查版本、端口占用、云/系统防火墙、地址和路由，用 `scripts/probe.py` 绑定物理接口测试。已有代理下的 curl 成功不能证明直连。两种 IP 家族都不可达时停止协议轮换，报告证据和缺少的条件。
 2. **部署服务。** 读取 [server.md](references/server.md)。核对出口 IPv4 直接分配给该服务器，确认版本支持，再安装官方 Xray。用 `scripts/render.py` 生成配置，语法测试后用 `scripts/apply_server.py` 事务式应用。不要覆盖未知的已有 Xray 服务。
 3. **分流与安全。** 读取 [routing.md](references/routing.md) 处理国内直连、固定出口优先与 DNS；读取 [security.md](references/security.md) 处理 SSH 端口、fail2ban、只读监控和确认闲置后的软件清理。已完成的安全改造只核验，不重复覆盖。
-4. **设备与客户端。** 读取 [devices.md](references/devices.md) 和 [clients.md](references/clients.md)。由 Agent 经已验证 SSH 按用户需要分配独立或共享凭据，交付私有原生配置并完成可操作客户端的导入；不自动部署订阅 HTTP 服务、隧道或订阅域名。重复执行同一凭据名称复用 UUID，跨客户端格式也可共用，更新由 Agent 处理。迁移完成前保留旧凭据，手机不可操作时保留待验收标记。
+4. **设备与客户端。** 读取 [devices.md](references/devices.md) 和 [clients.md](references/clients.md)。由 Agent 经已验证 SSH 按用户需要分配独立或共享凭据，交付私有原生配置并完成可操作客户端的导入；需要 URL 订阅时按 [subscriptions.md](references/subscriptions.md) 发布 CF 加密副本；不向 VPS 增加 HTTP 服务或隧道。重复执行同一活动凭据名称复用 UUID，跨客户端格式也可共用，Agent 更新副本后客户端刷新订阅。迁移完成前保留旧凭据，手机不可操作时保留待验收标记。
 5. **验收。** 用 `scripts/verify.py` 检查两个出口站。分别记录隔离物理接口、Clash 日常 TUN、显式代理、手机实机状态。只把实际通过的项目标记完成。
 6. **交付。** 返回启用的配置、入口家族、实测出口、私有设备配置位置、验收及回滚记录。节点凭据不进入聊天或公开文档。清理本次临时监听、防火墙规则和测试进程，不清除其他服务。
 

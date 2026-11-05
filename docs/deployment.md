@@ -26,7 +26,7 @@ python3 ops/register_device.py --config /private/routepilot/deploy.json \
   --name Phone --client shadowrocket --out /private/routepilot/phone
 ```
 
-A credential may intentionally be shared across devices and native client formats. The Agent imports the Mac profile when the app is available and delivers the phone profile through private files or a locally generated QR code. Updates are Agent-driven: repeat the workflow for the same registered device to reuse its credential. No subscription hostname, HTTP origin, tunnel or DNS permission is required. See [device delivery](devices.md).
+A credential may intentionally be shared across devices and native client formats. Publish a private HTTPS subscription with `ops/subscriptions.py publish --directory /private/routepilot/mac` and import its URL as a remote profile. The Agent updates the encrypted copy without changing its download URL or node identity; clients can refresh it. No extra hostname, VPS HTTP origin, tunnel or DNS permission is required. See [subscriptions and management](subscriptions.md).
 
 Production identifiers are generated into temporary deployment staging directories. `cloud/wrangler.json` and `cloud/status-site.json` are reusable templates. The public instance manifest is replaced from the private deployment settings during publication.
 

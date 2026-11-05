@@ -11,6 +11,7 @@ export default defineConfig({
   plugins: [react(), {
     name: 'status-loading-shell',
     transformIndexHtml(html, context) {
+      if (context.filename.endsWith('/admin/index.html')) return html;
       const cache = createCache();
       const skeleton = renderToString(createElement(StyleProvider, { cache }, createElement(StatusSkeleton)));
       const app = Object.values(context.bundle ?? {}).find(entry =>
@@ -59,6 +60,7 @@ export default defineConfig({
   root: 'status',
   resolve: { alias: { '/src': fileURLToPath(new URL('./src', import.meta.url)) } },
   publicDir: '../public',
-  server: { proxy: { '/status': 'http://127.0.0.1:8787' } },
-  build: { outDir: '../dist-status', emptyOutDir: true, assetsInlineLimit: 0 },
+  server: { proxy: { '/status': 'http://127.0.0.1:8787', '/private': 'http://127.0.0.1:8787' } },
+  build: { outDir: '../dist-status', emptyOutDir: true, assetsInlineLimit: 0,
+    rollupOptions: {input:{status:fileURLToPath(new URL('./status/index.html',import.meta.url)),admin:fileURLToPath(new URL('./status/admin/index.html',import.meta.url))}} },
 });

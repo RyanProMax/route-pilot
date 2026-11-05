@@ -3,13 +3,14 @@
 自建固定 IPv4 出口，从 VPS 部署、安全加固到客户端配置与状态监控。
 
 - **部署 Skill**：由 Agent 编排 VLESS / REALITY 部署、IPv4 / IPv6 直连诊断、SSH 端口迁移、fail2ban 和回滚。
-- **客户端配置**：生成独立的 Clash Verge、Shadowrocket 原生配置；凭证经 SSH 管理，私下交付，不开放订阅服务。
+- **私有订阅**：Clash Verge、Shadowrocket 通过 HTTPS 更新配置；独立随机令牌、加密存储、按凭证撤销。
 - **独立监控**：VPS 每分钟自检上报，Cloudflare 外部探测，D1 保存历史，无需 Mac 常驻。
 - **状态页**：React + TypeScript + Ant Design，支持 PWA、多实例切换、流量余额及 24 小时 / 7 天 / 30 天记录。
+- **管理页**：查看 CPU、内存、磁盘和各凭证月度上下行流量；公开页面不暴露凭证明细。
 
 ```text
 Agent + Skill ── SSH ── VPS ── 固定 IPv4 出口
-                    └─ 私有配置 ── Clash Verge / Shadowrocket
+                    └─ 加密配置 ── CF 私有订阅 ── Clash Verge / Shadowrocket
 
 VPS 自检 + Cloudflare 探测 ── Worker + D1 ── 缓存 API ── WebUI
 ```
@@ -37,6 +38,6 @@ node --test tests/*.test.mjs
 npm --prefix web run build:status
 ```
 
-[运维](docs/operations.md) · [安全](SECURITY.md) · [验收边界](docs/verification.md) · [贡献](CONTRIBUTING.md)
+[订阅与管理](docs/subscriptions.md) · [运维](docs/operations.md) · [安全](SECURITY.md) · [验收边界](docs/verification.md)
 
 MIT License。内置 Manrope 字体遵循 SIL OFL。

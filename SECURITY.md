@@ -6,11 +6,13 @@ Report vulnerabilities privately to the repository maintainers using the hosting
 
 - Public WebUI: read-only aggregate fields. It cannot access device profiles or the registry.
 - Reporting: a separate high-entropy bearer token authenticates ingestion. Its digest is a Worker secret; the VPS sender loads the credential through systemd.
-- Device administration: verified key-only SSH and root-only local helpers. There is no public registration, profile-download or subscription endpoint, and no persistent provisioning daemon.
-- Client profiles: each credential registration has an independent VLESS UUID and may be shared across devices. The private SQLite registry and generated files remain on the VPS and the authorized operator's machine; neither enters Cloudflare monitoring or the source repository.
+- Device administration: verified key-only SSH and root-only local helpers. There is no public registration or persistent VPS provisioning daemon. CF subscription downloads require random bearer tokens; encrypted uploads require a separate provisioning key.
+- Client profiles: each credential registration has an independent VLESS UUID and may be shared across devices. The private SQLite registry and generated files remain on the VPS and the authorized operator's machine; only authenticated encrypted profile copies enter CF subscription storage; neither plaintext profiles nor secrets enter the source repository.
 - Sharing is an operator choice. Multiple clients using the same credential have the same accounting and revocation identity; there is no physical-device restriction or claim to distinguish authorized sharing from copying.
-- Statistics count authenticated online credentials, including a legacy shared identity once. The node-wide TCP count remains separate. Credential labels and per-credential traffic counters stay in the private SSH interface; no UUIDs, source IPs or per-credential records enter public summaries.
-- Revocation removes the corresponding Xray credential. Deleting the local file alone does not revoke a previously distributed configuration.
+- Statistics count authenticated online credentials, including a legacy shared identity once. The node-wide TCP count remains separate. Credential labels and per-credential traffic counters are available over SSH and the authenticated admin API; no UUIDs, source IPs or per-credential records enter public summaries.
+- Full revocation disables the CF download and removes the corresponding Xray credential with a validated restart that closes sessions. Token-only revocation cannot disable previously imported configurations. Partial cross-system failures are reported for retry.
+- CF stores per-identity AES-256-GCM envelopes with identity/token-bound additional authenticated data. Encryption, provisioning, reporting and admin secrets are separated; the database contains token hashes, not bearer URLs. Private responses and admin data are never cached. Worker application logs are disabled; restrict Cloudflare account access and never enable request URL logging for private subscription paths.
+- Admin sessions are eight-hour Secure/HttpOnly/SameSite=Strict cookies backed by hashed session records. Login/logout require same origin. A new login invalidates previous sessions. The admin UI has no node mutation endpoint; authenticated provisioning remains an operator CLI action.
 
 ## Operations
 
