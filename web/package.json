@@ -1,0 +1,37 @@
+{
+  "name": "route-pilot-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "icons": "node scripts/generate-icons.mjs",
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "build:status": "tsc -b && vite build --mode status"
+  },
+  "dependencies": {
+    "antd": "6.7.0",
+    "lucide-react": "1.68.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@ant-design/cssinjs": "2.1.2",
+    "@resvg/resvg-js": "2.6.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vite-plugin-pwa": "2.0.0"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-darwin-arm64": "1.2.16"
+  },
+  "overrides": {
+    "workbox-build": {
+      "glob": "14.0.3"
+    }
+  }
+}

@@ -1,0 +1,429 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-05T05:28:40.930243+00:00",
+  "title": "Design System: route-pilot",
+  "extensions": {
+    "colorMeta": {
+      "forest": {
+        "role": "primary",
+        "displayName": "Forest",
+        "tonalRamp": [
+          "oklch(15% 0.0494 171.38)",
+          "oklch(25% 0.0494 171.38)",
+          "oklch(35% 0.0494 171.38)",
+          "oklch(45% 0.0494 171.38)",
+          "oklch(60% 0.0494 171.38)",
+          "oklch(70% 0.0494 171.38)",
+          "oklch(85% 0.0494 171.38)",
+          "oklch(95% 0.0494 171.38)"
+        ]
+      },
+      "forest-hover": {
+        "role": "primary",
+        "displayName": "Forest Hover",
+        "tonalRamp": [
+          "oklch(15% 0.0563 171.77)",
+          "oklch(25% 0.0563 171.77)",
+          "oklch(35% 0.0563 171.77)",
+          "oklch(45% 0.0563 171.77)",
+          "oklch(60% 0.0563 171.77)",
+          "oklch(70% 0.0563 171.77)",
+          "oklch(85% 0.0563 171.77)",
+          "oklch(95% 0.0563 171.77)"
+        ]
+      },
+      "forest-active": {
+        "role": "primary",
+        "displayName": "Forest Active",
+        "tonalRamp": [
+          "oklch(15% 0.0423 171.22)",
+          "oklch(25% 0.0423 171.22)",
+          "oklch(35% 0.0423 171.22)",
+          "oklch(45% 0.0423 171.22)",
+          "oklch(60% 0.0423 171.22)",
+          "oklch(70% 0.0423 171.22)",
+          "oklch(85% 0.0423 171.22)",
+          "oklch(95% 0.0423 171.22)"
+        ]
+      },
+      "healthy": {
+        "role": "primary",
+        "displayName": "Healthy Green",
+        "tonalRamp": [
+          "oklch(15% 0.1205 167.73)",
+          "oklch(25% 0.1205 167.73)",
+          "oklch(35% 0.1205 167.73)",
+          "oklch(45% 0.1205 167.73)",
+          "oklch(60% 0.1205 167.73)",
+          "oklch(70% 0.1205 167.73)",
+          "oklch(85% 0.1205 167.73)",
+          "oklch(95% 0.1205 167.73)"
+        ]
+      },
+      "slow": {
+        "role": "secondary",
+        "displayName": "Slow Amber",
+        "tonalRamp": [
+          "oklch(15% 0.1294 86.77)",
+          "oklch(25% 0.1294 86.77)",
+          "oklch(35% 0.1294 86.77)",
+          "oklch(45% 0.1294 86.77)",
+          "oklch(60% 0.1294 86.77)",
+          "oklch(70% 0.1294 86.77)",
+          "oklch(85% 0.1294 86.77)",
+          "oklch(95% 0.1294 86.77)"
+        ]
+      },
+      "error": {
+        "role": "secondary",
+        "displayName": "Error Coral",
+        "tonalRamp": [
+          "oklch(15% 0.1431 26.06)",
+          "oklch(25% 0.1431 26.06)",
+          "oklch(35% 0.1431 26.06)",
+          "oklch(45% 0.1431 26.06)",
+          "oklch(60% 0.1431 26.06)",
+          "oklch(70% 0.1431 26.06)",
+          "oklch(85% 0.1431 26.06)",
+          "oklch(95% 0.1431 26.06)"
+        ]
+      },
+      "unknown": {
+        "role": "neutral",
+        "displayName": "Unknown Gray",
+        "tonalRamp": [
+          "oklch(15% 0.0060 170.44)",
+          "oklch(25% 0.0060 170.44)",
+          "oklch(35% 0.0060 170.44)",
+          "oklch(45% 0.0060 170.44)",
+          "oklch(60% 0.0060 170.44)",
+          "oklch(70% 0.0060 170.44)",
+          "oklch(85% 0.0060 170.44)",
+          "oklch(95% 0.0060 170.44)"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "White",
+        "tonalRamp": [
+          "oklch(15% 0.0000 0.00)",
+          "oklch(25% 0.0000 0.00)",
+          "oklch(35% 0.0000 0.00)",
+          "oklch(45% 0.0000 0.00)",
+          "oklch(60% 0.0000 0.00)",
+          "oklch(70% 0.0000 0.00)",
+          "oklch(85% 0.0000 0.00)",
+          "oklch(95% 0.0000 0.00)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Forest Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0342 165.20)",
+          "oklch(25% 0.0342 165.20)",
+          "oklch(35% 0.0342 165.20)",
+          "oklch(45% 0.0342 165.20)",
+          "oklch(60% 0.0342 165.20)",
+          "oklch(70% 0.0342 165.20)",
+          "oklch(85% 0.0342 165.20)",
+          "oklch(95% 0.0342 165.20)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Text",
+        "tonalRamp": [
+          "oklch(15% 0.0228 159.22)",
+          "oklch(25% 0.0228 159.22)",
+          "oklch(35% 0.0228 159.22)",
+          "oklch(45% 0.0228 159.22)",
+          "oklch(60% 0.0228 159.22)",
+          "oklch(70% 0.0228 159.22)",
+          "oklch(85% 0.0228 159.22)",
+          "oklch(95% 0.0228 159.22)"
+        ]
+      },
+      "secondary-ink": {
+        "role": "neutral",
+        "displayName": "Secondary Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0289 159.75)",
+          "oklch(25% 0.0289 159.75)",
+          "oklch(35% 0.0289 159.75)",
+          "oklch(45% 0.0289 159.75)",
+          "oklch(60% 0.0289 159.75)",
+          "oklch(70% 0.0289 159.75)",
+          "oklch(85% 0.0289 159.75)",
+          "oklch(95% 0.0289 159.75)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Fine Line",
+        "tonalRamp": [
+          "oklch(15% 0.0058 153.77)",
+          "oklch(25% 0.0058 153.77)",
+          "oklch(35% 0.0058 153.77)",
+          "oklch(45% 0.0058 153.77)",
+          "oklch(60% 0.0058 153.77)",
+          "oklch(70% 0.0058 153.77)",
+          "oklch(85% 0.0058 153.77)",
+          "oklch(95% 0.0058 153.77)"
+        ]
+      },
+      "tab-surface": {
+        "role": "neutral",
+        "displayName": "Node Surface",
+        "tonalRamp": [
+          "oklch(15% 0.0041 157.18)",
+          "oklch(25% 0.0041 157.18)",
+          "oklch(35% 0.0041 157.18)",
+          "oklch(45% 0.0041 157.18)",
+          "oklch(60% 0.0041 157.18)",
+          "oklch(70% 0.0041 157.18)",
+          "oklch(85% 0.0041 157.18)",
+          "oklch(95% 0.0041 157.18)"
+        ]
+      },
+      "tab-hover": {
+        "role": "neutral",
+        "displayName": "Node Hover Surface",
+        "tonalRamp": [
+          "oklch(15% 0.0092 150.69)",
+          "oklch(25% 0.0092 150.69)",
+          "oklch(35% 0.0092 150.69)",
+          "oklch(45% 0.0092 150.69)",
+          "oklch(60% 0.0092 150.69)",
+          "oklch(70% 0.0092 150.69)",
+          "oklch(85% 0.0092 150.69)",
+          "oklch(95% 0.0092 150.69)"
+        ]
+      },
+      "period-surface": {
+        "role": "neutral",
+        "displayName": "Period Surface",
+        "tonalRamp": [
+          "oklch(15% 0.0083 157.09)",
+          "oklch(25% 0.0083 157.09)",
+          "oklch(35% 0.0083 157.09)",
+          "oklch(45% 0.0083 157.09)",
+          "oklch(60% 0.0083 157.09)",
+          "oklch(70% 0.0083 157.09)",
+          "oklch(85% 0.0083 157.09)",
+          "oklch(95% 0.0083 157.09)"
+        ]
+      },
+      "progress-rail": {
+        "role": "neutral",
+        "displayName": "Progress Rail",
+        "tonalRamp": [
+          "oklch(15% 0.0041 157.18)",
+          "oklch(25% 0.0041 157.18)",
+          "oklch(35% 0.0041 157.18)",
+          "oklch(45% 0.0041 157.18)",
+          "oklch(60% 0.0041 157.18)",
+          "oklch(70% 0.0041 157.18)",
+          "oklch(85% 0.0041 157.18)",
+          "oklch(95% 0.0041 157.18)"
+        ]
+      },
+      "range-track": {
+        "role": "neutral",
+        "displayName": "Range Track",
+        "tonalRamp": [
+          "oklch(15% 0.0025 165.08)",
+          "oklch(25% 0.0025 165.08)",
+          "oklch(35% 0.0025 165.08)",
+          "oklch(45% 0.0025 165.08)",
+          "oklch(60% 0.0025 165.08)",
+          "oklch(70% 0.0025 165.08)",
+          "oklch(85% 0.0025 165.08)",
+          "oklch(95% 0.0025 165.08)"
+        ]
+      },
+      "selection": {
+        "role": "neutral",
+        "displayName": "Text Selection",
+        "tonalRamp": [
+          "oklch(15% 0.0218 167.45)",
+          "oklch(25% 0.0218 167.45)",
+          "oklch(35% 0.0218 167.45)",
+          "oklch(45% 0.0218 167.45)",
+          "oklch(60% 0.0218 167.45)",
+          "oklch(70% 0.0218 167.45)",
+          "oklch(85% 0.0218 167.45)",
+          "oklch(95% 0.0218 167.45)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Body",
+        "purpose": "Manrope Latin text with system Chinese fallbacks; tabular numerals throughout."
+      },
+      "brand": {
+        "displayName": "Wordmark",
+        "purpose": "The linked brand, contracting to 23px and 21px at the two mobile breakpoints."
+      },
+      "title": {
+        "displayName": "Section Title",
+        "purpose": "Quota, stability, and optional event headings."
+      },
+      "node": {
+        "displayName": "Node Choice",
+        "purpose": "Visible radio-button node labels."
+      },
+      "secondary": {
+        "displayName": "Supporting Text",
+        "purpose": "Timestamps, metrics, current states, and time ranges."
+      },
+      "label": {
+        "displayName": "Compact Label",
+        "purpose": "Column headings and the monthly tag."
+      },
+      "amount": {
+        "displayName": "Quota Amount",
+        "purpose": "Remaining quota with a smaller muted total and unit."
+      }
+    },
+    "shadows": [
+      {
+        "name": "tooltip-filter",
+        "value": "drop-shadow(0 6px 16px rgba(0, 0, 0, 0.08)) drop-shadow(0 3px 6px rgba(0, 0, 0, 0.12)) drop-shadow(0 9px 28px rgba(0, 0, 0, 0.05))",
+        "purpose": "Installed Ant Design floating tooltip filter; not a surface box-shadow."
+      }
+    ],
+    "motion": [
+      {
+        "name": "node-state",
+        "value": "background-color 180ms ease-out, color 180ms ease-out",
+        "purpose": "Node selection and pointer state changes."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation-duration: 0.01ms; transition-duration: 0.01ms",
+        "purpose": "Applied globally under prefers-reduced-motion: reduce."
+      },
+      {
+        "name": "history-focus",
+        "value": "transform 220ms cubic-bezier(0.16, 1, 0.3, 1); exit 160ms",
+        "purpose": "Bounded five-bar emphasis with stable hit targets; no spatial expansion on touch or reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "820px"
+      },
+      {
+        "name": "compact-mobile",
+        "value": "360px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Brand lockup",
+      "kind": "custom",
+      "description": "The vector route-R and linked wordmark; static timestamp sits opposite it in the page header.",
+      "html": "<a class=\"ds-brand\" href=\"#\" aria-label=\"route-pilot 首页\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 40 40\" fill=\"none\" width=\"40\" height=\"40\" aria-hidden=\"true\"><path d=\"M7 32V13a6 6 0 0 1 6-6h10a9 9 0 0 1 0 18h-7l15 8\" stroke=\"#244b3f\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"7\" cy=\"33\" r=\"4\" fill=\"#159b76\"/></svg><span>route-pilot</span></a>",
+      "css": ".ds-brand{display:inline-flex;align-items:center;gap:10px;color:#22392f;text-decoration:none;font-family:Manrope,\"PingFang SC\",\"Microsoft YaHei\",sans-serif;cursor:pointer}.ds-brand span{font-size:27px;font-weight:700;letter-spacing:-.035em}.ds-brand svg{display:block}.ds-brand:focus-visible{outline:2px solid #244b3f;outline-offset:4px;}@media(max-width:820px){.ds-brand{gap:8px}.ds-brand span{font-size:23px}.ds-brand svg{width:32px;height:32px}}@media(max-width:360px){.ds-brand span{font-size:21px}.ds-brand svg{width:28px;height:28px}}"
+    },
+    {
+      "name": "Node radio tabs",
+      "kind": "nav",
+      "refersTo": "node-tab",
+      "description": "Flat wrapping radio choices. Preview names are generic; runtime names come from the instance list.",
+      "html": "<div class=\"ds-node-tabs\" role=\"radiogroup\" aria-label=\"选择实例\"><label class=\"ds-node-tab\"><input type=\"radio\" name=\"ds-node\" checked/><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 30 20\" width=\"21\" height=\"14\" role=\"img\" aria-label=\"日本\"><path fill=\"#fff\" d=\"M0 0h30v20H0z\"/><circle cx=\"15\" cy=\"10\" r=\"6\" fill=\"#bc002d\"/></svg><span>节点 A</span></label><label class=\"ds-node-tab\"><input type=\"radio\" name=\"ds-node\"/><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M2 12h20M12 2a17 17 0 0 1 0 20 17 17 0 0 1 0-20Z\"/></svg><span>节点 B</span></label></div>",
+      "css": ".ds-node-tabs{display:flex;flex-wrap:wrap;gap:10px;font-family:Manrope,\"PingFang SC\",\"Microsoft YaHei\",sans-serif}.ds-node-tab{position:relative;display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 20px;border:0;border-radius:8px;background:#f2f5f3;color:#53665b;font-size:14px;line-height:42px;font-weight:600;cursor:pointer;transition:background-color 180ms ease-out,color 180ms ease-out}.ds-node-tab input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer}.ds-node-tab svg{display:block;border-radius:2px;flex:none}.ds-node-tab:hover{background:#e8eee9}.ds-node-tab:has(input:checked){background:#244b3f;color:#fff}.ds-node-tab:has(input:checked):hover{background:#305e50}.ds-node-tab:has(input:checked):active{background:#1d3d33}.ds-node-tab:has(input:focus-visible){outline:2px solid #244b3f;outline-offset:3px}@media(max-width:820px){.ds-node-tab{padding-inline:18px}}@media(prefers-reduced-motion:reduce){.ds-node-tab{transition-duration:.01ms}}"
+    },
+    {
+      "name": "Remaining quota row",
+      "kind": "card",
+      "refersTo": "quota-row",
+      "description": "A quota rail aligned to the history strips, with a separate percentage and monthly amount. Preview amounts are illustrative.",
+      "html": "<section class=\"ds-quota\" aria-label=\"剩余流量\"><div class=\"ds-label\"><h2>剩余流量</h2><span class=\"ds-period\">每月</span></div><div class=\"ds-meter\"><div class=\"ds-progress\" role=\"progressbar\" aria-label=\"本月剩余流量百分比\" aria-valuemin=\"0\" aria-valuemax=\"100\" aria-valuenow=\"75\"><span></span></div></div><div class=\"ds-summary\"><span class=\"ds-percentage\">75%</span><span class=\"ds-amount\">750 <span>/ 1,000 GB</span></span></div></section>",
+      "css": ".ds-quota{display:grid;grid-template-columns:152px minmax(0,1fr) 186px;align-items:center;padding:28px 0;color:#22392f;font-family:Manrope,\"PingFang SC\",\"Microsoft YaHei\",sans-serif;font-variant-numeric:tabular-nums;cursor:default}.ds-quota h2{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}.ds-label{display:flex;align-items:baseline;gap:9px}.ds-meter{display:flex;align-items:center;min-width:0;padding-inline:16px}.ds-period{padding:0 13px;line-height:20px;border-radius:20px;background:#e8eeea;color:#53665b;font-size:11px;font-weight:500;white-space:nowrap}.ds-progress{flex:1;height:8px;min-width:0;border-radius:100px;background:#edf0ee;overflow:hidden}.ds-progress span{display:block;width:75%;height:100%;background:#159b76;border-radius:inherit}.ds-percentage{font-size:14px;font-weight:600}.ds-amount{font-size:17px;font-weight:600;text-align:right;white-space:nowrap}.ds-amount span{color:#627168;font-size:12px;font-weight:400}.ds-summary{display:flex;flex-direction:column;align-items:flex-end;gap:4px}@media(max-width:820px){.ds-quota{grid-template-columns:1fr auto;gap:12px;padding:22px 0}.ds-label{grid-column:1/-1}.ds-meter{grid-column:1/-1;grid-row:2;padding-inline:0}.ds-summary{grid-column:1/-1;grid-row:3;flex-direction:row;align-items:center;justify-content:space-between}.ds-percentage{font-size:12px}.ds-amount{font-size:15px}.ds-amount span{font-size:11px}}"
+    },
+    {
+      "name": "Time range selector",
+      "kind": "nav",
+      "refersTo": "range-control",
+      "description": "A flat segmented radio control without hover fills or shadows. Production retains the Ant Design moving thumb; the standalone preview uses native radios.",
+      "html": "<div class=\"ds-ranges\" role=\"radiogroup\" aria-label=\"时间范围\"><label class=\"ds-range\"><input type=\"radio\" name=\"ds-range\" checked/>24 小时</label><label class=\"ds-range\"><input type=\"radio\" name=\"ds-range\"/>7 天</label><label class=\"ds-range\"><input type=\"radio\" name=\"ds-range\"/>30 天</label></div>",
+      "css": ".ds-ranges{display:inline-flex;padding:4px;background:#f2f4f3;border-radius:8px;font:12px Manrope,\"PingFang SC\",\"Microsoft YaHei\",sans-serif;color:#627168}.ds-range{position:relative;padding:0 11px;line-height:28px;border-radius:6px;cursor:pointer;white-space:nowrap}.ds-range input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer}.ds-range:hover{color:#22392f;background:transparent}.ds-range:active{background:transparent}.ds-range:has(input:checked){color:#22392f;background:#fff;box-shadow:none}.ds-range:has(input:focus-visible){outline:2px solid #244b3f;outline-offset:4px;}@media(max-width:820px){.ds-ranges{font-size:11px;padding:3px}}@media(max-width:360px){.ds-ranges{font-size:10px}}"
+    },
+    {
+      "name": "Four-state legend",
+      "kind": "custom",
+      "description": "Four-state legend, horizontally centered on desktop and mobile.",
+      "html": "<div class=\"ds-legend\"><span><i class=\"ds-ok\"></i>健康</span><span><i class=\"ds-slow\"></i>缓慢</span><span><i class=\"ds-error\"></i>异常</span><span><i class=\"ds-unknown\"></i>无数据</span></div>",
+      "css": ".ds-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:18px;font:11px Manrope,\"PingFang SC\",\"Microsoft YaHei\",sans-serif;color:#627168;cursor:default}.ds-legend span{display:inline-flex;align-items:center;gap:8px}.ds-legend i{width:6px;height:6px;border-radius:50%;display:block}.ds-ok{background:#159b76}.ds-slow{background:#bd9425}.ds-error{background:#d3635b}.ds-unknown{background:#e0e5e3}@media(max-width:820px){.ds-legend{justify-content:center;gap:16px}}"
+    },
+    {
+      "name": "Observation history strip",
+      "kind": "button",
+      "refersTo": "history-sample",
+      "description": "Stable hit targets with a bounded five-bar hover emphasis: the focal sample expands and adjacent painted bars contract without changing rail length. Touch and reduced-motion retain static geometry.",
+      "html": "<div class=\"ds-history\" aria-label=\"主机心跳历史状态\"><button class=\"ds-sample ds-unknown\" aria-label=\"主机心跳，样本 1，无数据\"></button><button class=\"ds-sample ds-unknown\" aria-label=\"主机心跳，样本 2，无数据\"></button><button class=\"ds-sample ds-unknown\" aria-label=\"主机心跳，样本 3，无数据\"></button><button class=\"ds-sample ds-unknown\" aria-label=\"主机心跳，样本 4，无数据\"></button><button class=\"ds-sample ds-unknown\" aria-label=\"主机心跳，样本 5，无数据\"></button><button class=\"ds-sample ds-unknown\" aria-label=\"主机心跳，样本 6，无数据\"></button><button class=\"ds-sample ds-unknown\" aria-label=\"主机心跳，样本 7，无数据\"></button><button class=\"ds-sample ds-unknown\" aria-label=\"主机心跳，样本 8，无数据\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 9，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 10，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 11，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 12，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 13，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 14，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 15，健康\"></button><button class=\"ds-sample ds-slow\" aria-label=\"主机心跳，样本 16，缓慢\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 17，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 18，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 19，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 20，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 21，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 22，健康\"></button><button class=\"ds-sample ds-ok\" aria-label=\"主机心跳，样本 23，健康\"></button><button class=\"ds-sample ds-error\" aria-label=\"主机心跳，样本 24，异常\"></button></div>",
+      "css": ".ds-history{display:flex;align-items:flex-end;gap:3px}.ds-sample{background:transparent}.ds-sample.ds-ok{--bar-color:#159b76}.ds-sample.ds-slow{--bar-color:#bd9425}.ds-sample.ds-error{--bar-color:#d3635b}.ds-sample.ds-unknown{--bar-color:#e0e5e3}.ds-history { height: 26px; min-width: 0; width: 100%; }\n.ds-sample {\n  position: relative;\n  flex: 1; min-width: 0; width: auto; height: 100%; padding: 0; border: 0;\n  border-radius: 2px; box-shadow: none; cursor: pointer;\n  transition: filter 120ms ease-out;\n}\n.ds-sample::before {\n  content: ''; position: absolute; inset: 0; border-radius: inherit;\n  background: var(--bar-color); pointer-events: none;\n  transform-origin: center bottom;\n  transform: translateX(var(--bar-shift, 0%)) scale(var(--bar-width, 1), var(--bar-height, 1));\n  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);\n}\n.ds-sample:hover, .ds-sample:focus-visible { filter: brightness(0.9); }\n@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {\n  .ds-history:has(.ds-sample:hover) .ds-sample::before { transition-duration: 220ms; }\n  /* The five painted widths sum to five original bars: .85 + .55 + 2.2 + .55 + .85. */\n  .ds-sample:hover { --bar-width: 2.2; --bar-height: 1.12; }\n  .ds-sample:has(+ .ds-sample:hover) { --bar-width: .55; --bar-shift: -37.5%; }\n  .ds-sample:hover + .ds-sample { --bar-width: .55; --bar-shift: 37.5%; }\n  .ds-sample:has(+ .ds-sample + .ds-sample:hover) { --bar-width: .85; --bar-shift: -7.5%; }\n  .ds-sample:hover + .ds-sample + .ds-sample { --bar-width: .85; --bar-shift: 7.5%; }\n  /* Redistribute only the available neighbors at the ends; never paint outside the rail. */\n  .ds-sample:first-child:hover { --bar-width: 1.6; --bar-shift: 30%; }\n  .ds-sample:nth-child(2):hover { --bar-width: 2.05; --bar-shift: 7.5%; }\n  .ds-sample:first-child:has(+ .ds-sample:hover) { --bar-shift: -22.5%; }\n  .ds-sample:last-child:hover { --bar-width: 1.6; --bar-shift: -30%; }\n  .ds-sample:nth-last-child(2):hover { --bar-width: 2.05; --bar-shift: -7.5%; }\n  .ds-sample:hover + .ds-sample:last-child { --bar-shift: 22.5%; }\n}\n.ds-sample:focus-visible{outline:2px solid #244b3f;outline-offset:4px}@media(max-width:820px){.ds-history{height:24px;gap:2px}}"
+    },
+    {
+      "name": "History tooltip content",
+      "kind": "custom",
+      "description": "Content-sized two-row tooltip: leading state dot plus status or inline measurements, then time 6px below. Measurements have a 12px gap, with 8px after the dot. Missing credential data is omitted; zero remains. Preview counts are illustrative.",
+      "html": "<div class=\"ds-tooltip\" role=\"tooltip\"><div class=\"ds-tooltip-reading\"><i aria-label=\"健康\"></i><div class=\"ds-tooltip-metrics\"><div><strong>1</strong> 个凭证</div><div><strong>&lt;100</strong> 条连接</div></div></div><div class=\"ds-tooltip-time\">01/01 12:00 – 12:20</div></div>",
+      "css": ".ds-tooltip{box-sizing:border-box;width:max-content;max-width:calc(100vw - 24px);padding:12px 14px;background:#fff;color:#22392f;border-radius:8px;font:13px Manrope,\"PingFang SC\",\"Microsoft YaHei\",sans-serif;filter:drop-shadow(0 6px 16px rgba(0,0,0,.08)) drop-shadow(0 3px 6px rgba(0,0,0,.12));cursor:default}.ds-tooltip-metrics{display:flex;flex-direction:row;gap:12px;color:#627168;line-height:20px;white-space:nowrap}.ds-tooltip-metrics strong{color:#22392f;font-weight:600}.ds-tooltip-time{margin-top:6px;color:#627168;font-size:11px;line-height:16px;white-space:nowrap} .ds-tooltip-reading{display:flex;align-items:center;gap:8px}.ds-tooltip-reading i{display:block;flex:none;width:6px;height:6px;border-radius:50%;background:#159b76}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Status Sheet",
+    "overview": "route-pilot makes public operational evidence easy to scan on a plain white page. A compact geometric route mark, forest-green node selection, an unfilled quota row, and evenly spaced history rows create a calm visual rhythm. Manrope gives Latin lettering a distinct voice while operating-system Chinese fonts keep the interface familiar and legible.\n\nThis record captures the implemented public status surface. Its composition follows the user-pinned, code-first direction and the contract in the HTML entry point, with seed `a602ec91`. No image composition or separate quality-bar reference was selected. The stylesheet and component theme are the implementation authority; the finish review returned **ship**, with no material visual fixes.",
+    "keyCharacteristics": [
+      "A white page with forest-green selection and an unfilled quota row.",
+      "Visible, wrapping node choices with a country flag or globe.",
+      "Unruled observation rows with aligned, tabular measurements.",
+      "Four consistent state colors, always explained by words or the legend.",
+      "A compact route-R mark and Manrope Latin lettering with system Chinese fallbacks."
+    ],
+    "rules": [
+      {
+        "name": "The State Has Meaning Rule",
+        "body": "Keep 健康, 缓慢, 异常, and 无数据 consistent across current badges, history samples, the legend, and event records. Preserve a text explanation of color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Evidence Before Green Rule",
+        "body": "Missing, failed-to-load, or stale current observations show no data. A green historical sample cannot establish current health.",
+        "section": "colors"
+      },
+      {
+        "name": "The Stable Measurement Rule",
+        "body": "Keep numerals tabular and rate, duration, and quota values aligned. Preserve the em dash when a value is unavailable.",
+        "section": "typography"
+      },
+      {
+        "name": "The Unruled Row Rule",
+        "body": "Use alignment and whitespace to separate observations. Keep borders, row hover fills, and enclosing cards out of the status list.",
+        "section": "layout"
+      }
+    ],
+    "dos": [
+      "**Do** preserve the white single-page composition and visible, wrapping node selection.",
+      "**Do** use the route-R vector mark and Manrope with system Chinese fallbacks.",
+      "**Do** keep observations unruled, values aligned, and numerals tabular.",
+      "**Do** explain status color with words or the four-state legend and preserve explicit no-data states.",
+      "**Do** retain visible keyboard focus, touch-accessible history tooltips, and reduced-motion behavior.",
+      "**Do** use the default cursor for static text and a pointer for interactive controls.",
+      "**Do** keep all measurement fields available when rows reflow on narrow screens."
+    ],
+    "donts": [
+      "**Don't** restore a sidebar, refresh button, disclosure rows, or description blocks to this public status surface.",
+      "**Don't** turn the quota or observation rows into shadowed cards.",
+      "**Don't** show historical success as current health when evidence is missing or stale.",
+      "**Don't** use failure colors as decorative accents or turn unknown samples green.",
+      "**Don't** hard-code account, deployment, or host identifiers into reusable visual examples."
+    ]
+  }
+}

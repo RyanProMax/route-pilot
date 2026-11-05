@@ -1,0 +1,13 @@
+{
+  "name": "Tokyo",
+  "server_ipv4": "203.0.113.10",
+  "server_ipv6": "2001:db8::10",
+  "egress_ipv4": "203.0.113.10",
+  "port": 443,
+  "reality_server_name": "www.example.com",
+  "preferred_family": 6,
+  "mixed_port": 7897,
+  "cli_port": 1088,
+  "xray_version": "26.10.31",
+  "support_x25519mlkem768": true
+}

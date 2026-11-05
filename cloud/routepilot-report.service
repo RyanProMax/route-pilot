@@ -1,0 +1,28 @@
+[Unit]
+Description=Report host health to route-pilot
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=routepilot-report
+Group=routepilot-report
+LoadCredential=auth-header:/etc/routepilot-report/auth-header
+LoadCredential=config.json:/etc/routepilot-report/config.json
+ExecStartPre=+/usr/local/libexec/routepilot-snapshot
+ExecStart=/usr/local/libexec/routepilot-report
+TimeoutStartSec=50
+UMask=0077
+LimitCORE=0
+CoredumpFilter=0x0
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+LockPersonality=yes
+MemoryMax=64M

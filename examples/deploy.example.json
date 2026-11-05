@@ -1,0 +1,22 @@
+{
+  "account_id": "YOUR_CLOUDFLARE_ACCOUNT_ID",
+  "zone": "example.com",
+  "status_hostname": "status.example.com",
+  "ssh_host": "my-vps",
+  "instance": {
+    "id": "node-1",
+    "name": "Japan",
+    "country": "JP",
+    "ipv4": "203.0.113.10",
+    "ipv6": "2001:db8::10",
+    "port": 443,
+    "bandwidth_gb": 1024
+  },
+  "database": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "routepilot-node-1"
+  },
+  "xray_config": "/etc/fixed-ip-vpn/config.json",
+  "xray_service": "fixed-ip-vpn",
+  "stats_port": 10085
+}

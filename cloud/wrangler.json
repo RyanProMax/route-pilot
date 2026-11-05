@@ -1,0 +1,19 @@
+{
+  "name": "routepilot-instance",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-07-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [],
+  "d1_databases": [],
+  "vars": {},
+  "triggers": {
+    "crons": [
+      "* * * * *",
+      "15 3 * * *"
+    ]
+  },
+  "cache": {
+    "enabled": true
+  }
+}

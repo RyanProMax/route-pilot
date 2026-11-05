@@ -1,0 +1,4 @@
+interface:
+  display_name: "route-pilot 固定出口部署"
+  short_description: "部署已有 VPS 的固定出口，并生成、导入和验收 Clash Verge 与 Shadowrocket 配置"
+  default_prompt: "使用 $fixed-ip-vpn 为我部署已有 VPS 的直连固定出口，并配置 Clash Verge 和 Shadowrocket。"

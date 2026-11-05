@@ -1,0 +1,23 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/instances.json
+  Cache-Control: public, max-age=60, must-revalidate
+
+/sw.js
+  Cache-Control: no-cache
+
+/registerSW.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Content-Type: application/manifest+json; charset=utf-8
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/icons/*
+  Cache-Control: public, max-age=86400, must-revalidate

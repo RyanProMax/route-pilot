@@ -1,0 +1,11 @@
+{
+  "name": "routepilot-status",
+  "compatibility_date": "2026-07-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [],
+  "assets": {
+    "directory": "../web/dist-status",
+    "not_found_handling": "404-page"
+  }
+}
