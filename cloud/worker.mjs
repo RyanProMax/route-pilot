@@ -113,7 +113,8 @@ async function observe(env,now) {
 async function prune(env,now) {
   const cutoff=now-31*86400;
   await env.DB.batch(["DELETE FROM samples WHERE ts<?","DELETE FROM reports WHERE minute<?","DELETE FROM events WHERE ts<?","DELETE FROM buckets WHERE bucket+width<?","DELETE FROM connection_buckets WHERE bucket+width<?"].map((sql,i)=>env.DB.prepare(sql).bind(i===1?Math.floor(cutoff/60):cutoff)));
-  await env.DB.batch([env.DB.prepare('DELETE FROM admin_sessions WHERE expires<?').bind(now),
+  await env.DB.batch([env.DB.prepare('DELETE FROM rp_sessions WHERE expires<?').bind(now),
+    env.DB.prepare('DELETE FROM oauth_attempts WHERE expires<?').bind(now),
     env.DB.prepare('DELETE FROM credential_usage WHERE month<?').bind(new Date((now-366*86400)*1000).toISOString().slice(0,7))]);
 }
 export default {

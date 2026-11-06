@@ -1,32 +1,57 @@
 # Google 登录
 
-管理页通过 Cloudflare Access 登录 Google 账号。公开状态页、节点订阅、VPS 上报和 CLI 发放使用各自原有权限；无需在 VPS 安装服务或新建隧道。
+Google 验证身份，RP 在 D1 管理账号、权限与会话。Worker 直接完成 OAuth 回调；不依赖外部登录网关、VPS 服务或 Mac 常驻。
 
-## 一次性配置
+## Google 控制台
 
-1. 在 Cloudflare Zero Trust 创建团队；已有团队直接复用。
-2. 按 [Cloudflare Google 接入文档](https://developers.cloudflare.com/cloudflare-one/integrations/identity-providers/google/) 创建 Google OAuth **Web application**，在 CF 添加 Google 身份提供商。已有 Google 提供商可复用。回调为 `https://TEAM.cloudflareaccess.com/cdn-cgi/access/callback`；不要填状态页域名。OAuth Secret 只填 CF 控制台，不进入仓库或聊天。Google consent screen 若处于测试状态，添加允许登录的测试用户。
-3. 创建仅限目标 CF 账户的 API Token，权限为 **Access: Apps and Policies / Edit**、**Access: Organizations, Identity Providers, and Groups / Read**。保存至仓库外、当前用户所有的 mode-600 文件。Worker 发布继续使用 Wrangler；无需 DNS 或 VPS 权限。
-4. 生成私有计划并检查保护路径与邮箱：
+1. 打开 [Google Cloud Console](https://console.cloud.google.com/)，新建或选择项目，例如 `route-pilot`。
+2. 进入 **Google Auth Platform**（旧界面为 APIs & Services → OAuth consent screen）。首次使用点 **Get started**，应用名填 `route-pilot`，支持邮箱和联系邮箱填自己的邮箱。
+3. **Audience** 选择 **External**。首轮保持 **Testing**，在 **Test users** 加入自己的 Google 邮箱。此列表控制 Google 测试资格；RP 的管理权限另由 D1 决定。
+4. **Data Access** 仅需 `openid` 和 `.../auth/userinfo.email`，不申请 Gmail、Drive 或离线访问。代码登录请求会自动携带 `openid email`。
+5. **Clients → Create client → Web application**。在 **Authorized redirect URIs** 添加：
+
+   `https://YOUR_STATUS_HOST/private/auth/google/callback`
+
+   必须与部署域名完全一致，不加尾部斜杠。当前服务端跳转方案无需填写 Authorized JavaScript origins。
+6. 创建后下载 OAuth 客户端 JSON，存到仓库外，将权限设为 `600`。密钥不发到聊天，不提交 Git。已有客户端修改回调后，重新下载 JSON。
+
+## 保存到 Worker
+
+推荐由 Agent 导入私有 JSON：
 
 ```sh
-python3 ops/configure_access.py --config /private/routepilot/deploy.json \
-  --token-file /private/routepilot/cf-access-token --email admin@example.com
-# 多个 Google 身份提供商时加 --idp-id GOOGLE_PROVIDER_ID。
-# 检查同目录 access-plan.json 后，执行相同命令加 --apply。
-python3 ops/publish_monitor.py --config /private/routepilot/deploy.json
+python3 ops/configure_google.py --config /private/routepilot/deploy.json \
+  --credentials-file /private/routepilot/google-oauth.json
 ```
 
-`--apply` 创建专属允许策略和同一个 Access 应用，精确覆盖 `/admin`、`/admin/*`、`/private/overview`。只允许指定 Google 提供商和明确邮箱，默认拒绝其他人。不能保护整个域名或 `/private/*`，否则订阅、上报或 CLI 会被登录页拦截。
+脚本核对 Web 客户端类型及精确回调地址，使用原有 Wrangler 发布权限，把 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET` 写入 Worker Secrets，不打印其值。两项统一使用 Secret，后续发布代码不会清除它们。无需新的 CF API Token。
 
-脚本保存资源检查点，部分失败后可重试；已存在但未登记或配置不一致的资源需要先检查，不自动覆盖。部署配置切换至 `admin_auth: "access"`，保留 `before-access.json` 私有备份。团队、应用 AUD、资源 ID 和邮箱都不进入公开源码。
+也可直接在 **CF → Workers & Pages → 后端 Worker → Settings → Variables and Secrets** 添加这两个同名 **Secret** 并部署。不要填到静态页面 Worker。
 
-## 运行与验收
+`APP_ORIGIN` 由部署脚本按状态域名生成；回调地址由后端固定计算，不接受客户端自定义返回地址。
 
-- Chrome、Safari 均可：打开 `/admin/` → Google 登录 → 查看负载和凭证用量。会话最长八小时；过期后用登录按钮重新进入，退出走 CF Access logout。
-- Worker 使用 `jose` 校验 CF JWT 的签名、固定签发者、应用 AUD、时效和邮箱摘要白名单。只提供邮箱请求头无效；配置不完整时拒绝访问。
-- Access 模式关闭旧密钥登录和旧会话；部署同时禁用旧管理密钥摘要并删除旧会话。上报与发放密钥继续独立生效。不能依赖隐藏管理入口保护接口。
-- 切换后必须实测允许账号登录、退出、非白名单拒绝，以及匿名状态页、现有订阅下载、下一次 VPS 上报。单元测试和登录按钮截图不能替代真实 Google 回调验收。
-- 收回账号权限：同时移除 Access 策略和部署邮箱白名单，重新发布 Worker，并在 CF 撤销已有 Access 会话。仅退出浏览器不等于全局撤销已经复制的 JWT；离线签名校验不会实时查询全局撤销列表。保持 Access 网关保护、关闭 Worker 预览与 `workers.dev` 入口。
+## RP 账号策略
 
-未配置 Access 的自托管部署仍可显式使用 `admin_auth: "key"`；这是独立部署模式，不是 Google 登录失败后的自动降级。回滚需操作者恢复私有配置并重新发布，不能向访客提供绕过入口。
+首次部署在仓库外的部署 JSON 设置 `bootstrap_admin_email`，运行 `ops/publish_monitor.py`。只有账号表为空时才创建初始管理员；之后重复部署不会重新启用已禁用账号，也不会覆盖 Google 身份绑定。首版只允许管理员，无公开注册。
+
+```sh
+python3 ops/accounts.py list
+python3 ops/accounts.py allow --email admin@example.com
+python3 ops/accounts.py disable --email admin@example.com
+python3 ops/accounts.py enable --email admin@example.com
+python3 ops/accounts.py revoke-sessions --email admin@example.com
+```
+
+这些命令使用操作者已有 D1 发布权限，可加 `--config`、`--wrangler`。首次登录用经过验证的邮箱匹配预先允许的账号，然后绑定 Google `sub`；后续按稳定身份识别，不允许其他 Google 身份接管同一邮箱。禁用账号会撤销现有会话，重新启用必须重新登录。
+
+## 登录与验收
+
+浏览器发起同源登录请求 → Google 登录 → RP 回调核验 → D1 检查账号 → 设置本站 Cookie → 返回 `/admin/`。OAuth 使用浏览器绑定的一次性 state、nonce 和 PKCE S256；回调原子消费后不能重放。Google ID token 的签名、签发者、受众、时效、nonce 与邮箱验证状态均需通过。
+
+会话最长八小时，Cookie 为 Secure、HttpOnly、SameSite=Lax；D1 仅存会话摘要。每次管理请求重新检查账号启用状态和角色。退出删除服务器会话；浏览器脚本不接触 OAuth 密钥或 Google token，localStorage/sessionStorage 不存登录凭证。
+
+缺少 Google 参数时，管理页显示“Google 登录尚未配置”，旧管理密钥不可登录。迁移会清除旧登录会话，不修改监控历史、订阅或节点凭据。
+
+验收必须包括真实 Google 登录、退出、非允许账号拒绝、禁用后旧会话失效，以及匿名状态页、现有订阅和下一次 VPS 上报。模拟测试不能代替真实 Google 回调。公开状态页与采集、订阅、发放凭证保持各自权限，不要求 Google 登录。
+
+参考：[Google OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect)、[Worker Secrets](https://developers.cloudflare.com/workers/configuration/secrets/)。

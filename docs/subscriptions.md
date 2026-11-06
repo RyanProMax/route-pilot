@@ -4,7 +4,7 @@ VPS runs Xray and the existing minute reporter. Cloudflare handles subscription 
 
 ## Publish
 
-Run `ops/publish_monitor.py` to apply the migration and create the Worker secrets. Its private instance directory holds `subscription-key`, `provision-key` and `admin-key` (mode 600). Back up these files privately.
+Run `ops/publish_monitor.py` to apply the migration and create the Worker secrets. Its private instance directory holds `subscription-key`, `provision-key` and `report-token` (mode 600). Back up these files privately.
 
 ```sh
 python3 ops/subscriptions.py --config /private/routepilot/deploy.json \
@@ -36,9 +36,7 @@ Node revocation validates and replaces the Xray configuration, then restarts Xra
 
 ## Admin and accounting
 
-Open `/admin/` on the deployed status hostname. [Google login through Cloudflare Access](admin-login.md) restricts management to the configured Google email allowlist and verifies the signed application identity at the Worker. Access mode disables legacy admin keys and sessions. The page is read-only; reporting and provisioning retain separate credentials.
-
-Deployments without Access can use key mode: enter the private `admin-key` for an eight-hour Secure, HttpOnly, SameSite=Strict session. A new key login invalidates the previous session. Neither mode stores credentials in browser storage.
+Open `/admin/` on the deployed status hostname. [Google login](admin-login.md) verifies identity directly at the Worker; RP manages allowed accounts and revocable sessions in D1. No public registration or fallback key login is available. The page is read-only; reporting and provisioning retain separate credentials. Browser sessions use eight-hour Secure, HttpOnly, SameSite=Lax cookies, with only their hashes stored in D1.
 
 The public page shows CPU usage, memory, disk and one-minute system load. Credential names and traffic are only available through the authenticated management API. Private responses are not cached by CF, the browser or the service worker. Public status keeps its 60-second cache.
 

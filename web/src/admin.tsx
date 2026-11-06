@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Alert,Badge,Button,ConfigProvider,Flex,Form,Input,Skeleton,Table,Tooltip} from 'antd';
+import {Alert,Badge,Button,ConfigProvider,Flex,Skeleton,Table,Tooltip} from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import {theme} from './status';
 import {HostMetrics} from './load';
@@ -18,21 +18,27 @@ const size = (bytes:number) => {
 const time = (ts:number) => new Intl.DateTimeFormat('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(ts*1000);
 function Admin() {
   const [data,setData]=useState<Overview|null>(null), [auth,setAuth]=useState<boolean|null>(null);
-  const [mode,setMode]=useState<'key'|'access'|null>(null), [revision,setRevision]=useState(0);
+  const [ready,setReady]=useState<boolean|null>(null), [revision,setRevision]=useState(0);
   const [error,setError]=useState(''), [busy,setBusy]=useState(false);
-  const [form]=Form.useForm();
+  const [loginError]=useState(()=>{
+    const code=new URLSearchParams(window.location.search).get('login');
+    const messages:Record<string,string>={denied:'此账号没有管理权限',expired:'登录已过期，请重新登录',
+      failed:'登录未完成，请重试',cancelled:'已取消登录',unavailable:'Google 登录尚未配置'};
+    return code ? messages[code]??'登录未完成，请重试' : '';
+  });
   useEffect(()=>{
     const controller=new AbortController();
     void fetch('/private/auth',{cache:'no-store',signal:controller.signal}).then(async r=>{
       if(!r.ok)throw Error();
       const next=await r.json();
-      if(next.mode!=='key' && next.mode!=='access')throw Error();
-      if(!controller.signal.aborted)setMode(next.mode);
+      if(next.provider!=='google' || typeof next.ready!=='boolean')throw Error();
+      if(!controller.signal.aborted)setReady(next.ready);
     }).catch(()=>{if(!controller.signal.aborted)setError('暂时无法读取登录配置');});
+    if(window.location.search)window.history.replaceState(null,'','/admin/');
     return ()=>controller.abort();
   },[]);
   useEffect(()=>{
-    if(!mode)return;
+    if(ready===null)return;
     let stopped=false, timer:ReturnType<typeof setTimeout>;
     const controller=new AbortController();
     async function load() {
@@ -48,17 +54,18 @@ function Admin() {
       if(!stopped)timer=setTimeout(load,60000);
     }
     void load(); return ()=>{stopped=true;clearTimeout(timer);controller.abort();};
-  },[mode,revision]);
-  async function login(values:{key:string}) {
+  },[ready,revision]);
+  async function login() {
     setBusy(true);setError('');
     try {
-      const r=await fetch('/private/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(values),cache:'no-store'});
+      const r=await fetch('/private/auth/google/start',{method:'POST',cache:'no-store'});
       if(!r.ok)throw Error();
-      form.resetFields();setAuth(true);setRevision(value=>value+1);
-    }catch{setError('密钥无效或暂时无法登录');}finally{setBusy(false);}
+      const next=await r.json(),url=new URL(next.authorizationUrl);
+      if(url.origin!=='https://accounts.google.com' || url.pathname!=='/o/oauth2/v2/auth')throw Error();
+      window.location.assign(url.toString());
+    }catch{setError('暂时无法发起登录，请重试');setBusy(false);}
   }
   async function logout() {
-    if(mode==='access') {window.location.assign('/cdn-cgi/access/logout');return;}
     setBusy(true);
     try {
       const r=await fetch('/private/session',{method:'DELETE',cache:'no-store'});
@@ -70,13 +77,10 @@ function Admin() {
     <header className="site-header"><a className="brand" href="/"><img src={routeMark} alt="" width={40} height={40}/><span>route-pilot</span></a>
       {auth && <Button type="text" loading={busy} onClick={logout}>退出</Button>}</header>
     <main>
-      {error && <Alert type="warning" title={error} className="status-alert" showIcon/>}
+      {(error || (!auth && loginError)) && <Alert type="warning" title={error || loginError} className="status-alert" showIcon/>}
       {auth===false ? <section className="admin-login"><h1>管理访问</h1>
-        {mode==='access' ? <Button type="primary" size="large" href="/admin/">使用 Google 登录</Button> : <Form form={form} layout="vertical" onFinish={login} requiredMark={false}>
-          <Form.Item name="key" label="管理密钥" rules={[{required:true,message:'请输入管理密钥'}]}>
-            <Input.Password autoComplete="current-password" size="large"/></Form.Item>
-          <Button type="primary" htmlType="submit" loading={busy}>进入</Button>
-        </Form>}</section> : !data ? <Skeleton active paragraph={{rows:6}}/> : <>
+        {ready===false ? <p>Google 登录尚未配置</p> : <Button type="primary" size="large" loading={busy} onClick={login}>使用 Google 登录</Button>}
+      </section> : !data ? <Skeleton active paragraph={{rows:6}}/> : <>
         <Flex className="section-heading" justify="space-between" align="center"><h2>主机负载</h2><time>{data.reportedAt ? time(data.reportedAt) : '待更新'}</time></Flex>
         <HostMetrics load={data.load}/>
         <section className="admin-usage"><Flex justify="space-between" align="center" className="section-heading"><h2>凭证流量</h2><span>{data.month}</span></Flex>

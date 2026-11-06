@@ -6,7 +6,7 @@
 - **私有订阅**：Clash Verge、Shadowrocket 通过 HTTPS 更新配置；独立随机令牌、加密存储、按凭证撤销。
 - **独立监控**：VPS 每分钟自检上报，Cloudflare 外部探测，D1 保存历史，无需 Mac 常驻。
 - **状态页**：React + TypeScript + Ant Design，支持 PWA、多实例切换、流量余额及 24 小时 / 7 天 / 30 天记录。
-- **管理页**：支持 Google 登录，查看主机负载和各凭证月度流量；公开页面不暴露凭证明细。
+- **管理页**：直接接入 Google 登录，RP 管理账号与会话；查看主机负载和各凭证月度流量。
 
 ```text
 Agent + Skill ── SSH ── VPS ── 固定 IPv4 出口

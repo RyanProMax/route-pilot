@@ -31,24 +31,12 @@ def load_config(path=None):
     if type(i['bandwidth_gb']) is not int or i['bandwidth_gb'] <= 0: raise ValueError('Invalid traffic allowance')
     uuid.UUID(c['database']['id'])
     if not re.fullmatch(r'[a-z0-9-]+', c['database']['name']): raise ValueError('Invalid database name')
-    validate_admin(c)
+    if c.get('bootstrap_admin_email'):
+        if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', c['bootstrap_admin_email']) or len(c['bootstrap_admin_email'])>254:
+            raise ValueError('Invalid bootstrap administrator email')
     return c
 
-def validate_admin(c):
-    mode = c.get('admin_auth', 'key')
-    if mode not in ('key', 'access'): raise ValueError('Invalid admin_auth')
-    if mode == 'access':
-        a = c.get('access', {})
-        if not re.fullmatch(r'https://[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.cloudflareaccess\.com', a.get('issuer','')):
-            raise ValueError('Invalid Access team issuer')
-        if not re.fullmatch(r'[a-f0-9]{64}', a.get('aud','')): raise ValueError('Invalid Access audience')
-        emails = a.get('emails', [])
-        if not isinstance(emails,list) or not 1 <= len(emails) <= 20 or any(
-            not isinstance(e,str) or not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', e) or len(e)>254 for e in emails):
-            raise ValueError('Set the exact Google email allowlist')
-
 def cloud_configs(c):
-    validate_admin(c)
     worker = json.loads((ROOT/'cloud/wrangler.json').read_text())
     site = json.loads((ROOT/'cloud/status-site.json').read_text())
     i = c['instance']; host = c['status_hostname']; zone = c['zone']
@@ -61,8 +49,6 @@ def cloud_configs(c):
     worker['d1_databases'] = [{'binding':'DB','database_name':c['database']['name'],
         'database_id':c['database']['id'],'migrations_dir':'migrations'}]
     worker['vars'] = {'INSTANCE_ID':i['id'],'IPV4':i['ipv4'],'IPV6':i.get('ipv6',''),
-        'PORT':str(i['port']),'PLAN_BANDWIDTH_GB':str(i['bandwidth_gb']), 'ADMIN_AUTH_MODE':c.get('admin_auth','key')}
-    if c.get('admin_auth') == 'access':
-        worker['vars'].update(ACCESS_ISSUER=c['access']['issuer'], ACCESS_AUD=c['access']['aud'])
+        'PORT':str(i['port']),'PLAN_BANDWIDTH_GB':str(i['bandwidth_gb']), 'APP_ORIGIN':'https://'+host}
     site.update(account_id=c['account_id'],routes=[{'pattern':host+'/*','zone_name':zone}])
     return worker, site

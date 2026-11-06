@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import tempfile
 from deployment import load_config, cloud_configs
+from accounts import allow_sql
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = Path.home() / ".local/share/routepilot/cloud"
@@ -33,7 +34,7 @@ def private_key(state, name):
     return key
 
 
-def private_secrets(state, deployment):
+def private_secrets(state):
     path = state/'subscription-key'
     if not path.exists():
         with path.open('x') as file: file.write(base64.b64encode(secrets.token_bytes(32)).decode()+'\n')
@@ -43,12 +44,6 @@ def private_secrets(state, deployment):
     if len(base64.b64decode(key,validate=True)) != 32: raise ValueError('Invalid encryption key')
     result = {'SUBSCRIPTION_KEY':key,
               'PROVISION_SHA256':hashlib.sha256(private_key(state,'provision-key').encode()).hexdigest()}
-    if deployment.get('admin_auth') == 'access':
-        result['ACCESS_EMAIL_SHA256'] = ','.join(sorted({hashlib.sha256(email.lower().encode()).hexdigest() for email in deployment['access']['emails']}))
-        # Disable the old secret even if someone later changes the auth-mode variable.
-        result['ADMIN_SHA256'] = 'disabled'
-    else:
-        result['ADMIN_SHA256'] = hashlib.sha256(private_key(state,'admin-key').encode()).hexdigest()
     return result
 
 
@@ -77,7 +72,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="routepilot-edge-") as directory:
         stage = Path(directory)
         (stage / "cloud").mkdir()
-        for name in ("wrangler.json", "worker.mjs", "status-site.json", "public-status.mjs", "status-cache.mjs", "private-api.mjs", "access-auth.mjs", "package.json", "package-lock.json"):
+        for name in ("wrangler.json", "worker.mjs", "status-site.json", "public-status.mjs", "status-cache.mjs", "private-api.mjs", "auth.mjs", "package.json", "package-lock.json"):
             shutil.copyfile(ROOT / "cloud" / name, stage / "cloud" / name)
         shutil.copytree(ROOT / "cloud/migrations", stage / "cloud/migrations")
         (stage/"cloud/wrangler.json").write_text(json.dumps(config))
@@ -95,10 +90,11 @@ def main():
             config["routes"].append({"pattern":deployment["status_hostname"]+"/i/"+route, "zone_name":deployment["zone"]})
             (stage/"cloud/wrangler.json").write_text(json.dumps(config))
             run("d1","migrations","apply",config["d1_databases"][0]["database_name"],"--remote")
+            if deployment.get('bootstrap_admin_email'):
+                (stage/'bootstrap.sql').write_text(allow_sql(deployment['bootstrap_admin_email'],bootstrap=True))
+                run('d1','execute',config['d1_databases'][0]['database_name'],'--remote','--file','bootstrap.sql',quiet=True)
             run("deploy", quiet=True)
-            run("secret","bulk",body=json.dumps({"REPORT_SHA256":digest,**private_secrets(state,deployment)}))
-            if deployment.get('admin_auth') == 'access':
-                run('d1','execute',config['d1_databases'][0]['database_name'],'--remote','--command','DELETE FROM admin_sessions', quiet=True)
+            run("secret","bulk",body=json.dumps({"REPORT_SHA256":digest,**private_secrets(state)}))
         if not args.collector_only:
             dist = stage / "web/dist-status"
             shutil.copytree(ROOT / "web/dist-status", dist)

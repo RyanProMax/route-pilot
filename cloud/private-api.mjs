@@ -1,8 +1,7 @@
-import {accessIdentity, adminMode} from './access-auth.mjs';
+import {authAPI, authenticatedAccount, digest, privateHeaders} from './auth.mjs';
+export {digest} from './auth.mjs';
 // Private configuration and usage are never read by public-status.mjs.
 const encoder = new TextEncoder();
-const hex = bytes => Array.from(bytes, x => x.toString(16).padStart(2, '0')).join('');
-export const digest = async value => hex(new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(value))));
 export async function authorized(value, expected) {
   if (!value || value.length > 200 || !/^[a-f0-9]{64}$/.test(expected ?? '')) return false;
   const actual = await digest(value);
@@ -10,8 +9,7 @@ export async function authorized(value, expected) {
   for (let i = 0; i < 64; i++) diff |= actual.charCodeAt(i) ^ expected.charCodeAt(i);
   return diff === 0;
 }
-const headers = {'Cache-Control':'private, no-store', 'CDN-Cache-Control':'no-store',
-  'X-Content-Type-Options':'nosniff', 'Referrer-Policy':'no-referrer', 'X-Robots-Tag':'noindex, nofollow'};
+const headers = privateHeaders;
 const json = (body, status = 200, extra = {}) => Response.json(body, {status, headers:{...headers,...extra}});
 export async function readBody(request, maximum) {
   if (!request.headers.get('content-type')?.startsWith('application/json')) throw Error('body');
@@ -35,20 +33,15 @@ export async function decrypt(row, env) {
   const plaintext = await crypto.subtle.decrypt({name:'AES-GCM', iv:bytes(row.iv), additionalData:aad}, key, bytes(row.ciphertext));
   return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(plaintext));
 }
-const cookie = request => /(?:^|;\s*)__Host-routepilot=([a-f0-9]{64})(?:;|$)/.exec(request.headers.get('cookie') ?? '')?.[1];
-const sessionCookie = (value, age) => `__Host-routepilot=${value}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${age}`;
-const sameOrigin = request => request.headers.get('origin') === new URL(request.url).origin;
-async function session(request, env, now) {
-  const value = cookie(request);
-  return value && await env.DB.prepare('SELECT hash FROM admin_sessions WHERE hash=? AND expires>?').bind(await digest(value), now).first();
-}
 export async function privateAPI(request, env, now) {
   const url = new URL(request.url), path = url.pathname;
   if (!path.startsWith('/sub/') && !path.startsWith('/private/')) return null;
-  if (url.protocol !== 'https:' || url.search) return json({error:'Not found'},404);
+  if (url.protocol !== 'https:' || (url.search && path!=='/private/auth/google/callback')) return json({error:'Not found'},404);
   // Rate limiting is best effort per CF location; authentication remains mandatory.
   if (env.PRIVATE_LIMIT && !(await env.PRIVATE_LIMIT.limit({key:request.headers.get('cf-connecting-ip') || 'unknown'})).success)
     return json({error:'Too many requests'},429,{'Retry-After':'60'});
+  const authentication = await authAPI(request,env,now);
+  if(authentication)return authentication;
   if (path.startsWith('/sub/')) {
     const match = /^\/sub\/([A-Za-z0-9_-]{43})\/(clash\.yaml|shadowrocket\.txt|rules\.conf)$/.exec(path);
     if (!match || !['GET','HEAD'].includes(request.method)) return json({error:'Not found'},404);
@@ -61,31 +54,8 @@ export async function privateAPI(request, env, now) {
       'Content-Type':'text/plain; charset=utf-8', 'profile-update-interval':'24',
       'Content-Disposition':`attachment; filename="${match[2]}"`}});
   }
-  if (path === '/private/auth' && request.method === 'GET') {
-    const mode = adminMode(env);
-    return ['key','access'].includes(mode) ? json({mode}) : json({error:'Unavailable'},503);
-  }
-  if (path === '/private/session' && adminMode(env) !== 'key') return json({error:'Not found'},404);
-  if (path === '/private/session' && request.method === 'POST') {
-    if (!sameOrigin(request)) return json({error:'Forbidden'},403);
-    let body; try {body = await readBody(request,512);} catch {return json({error:'Invalid request'},400);}
-    if (!await authorized(body.key,env.ADMIN_SHA256)) return json({error:'Unauthorized'},401);
-    const value = hex(crypto.getRandomValues(new Uint8Array(32)));
-    // One administrator session per instance. Login invalidates any previous browser session.
-    await env.DB.batch([env.DB.prepare('DELETE FROM admin_sessions'),
-      env.DB.prepare('INSERT INTO admin_sessions(hash,expires) VALUES(?,?)').bind(await digest(value),now+8*3600)]);
-    return json({ok:true},200,{'Set-Cookie':sessionCookie(value,8*3600)});
-  }
-  if (path === '/private/session' && request.method === 'DELETE') {
-    if (!sameOrigin(request)) return json({error:'Forbidden'},403);
-    const value = cookie(request);
-    if (value) await env.DB.prepare('DELETE FROM admin_sessions WHERE hash=?').bind(await digest(value)).run();
-    return json({ok:true},200,{'Set-Cookie':sessionCookie('',0)});
-  }
   if (path === '/private/overview' && request.method === 'GET') {
-    const mode = adminMode(env);
-    const allowed = mode === 'access' ? await accessIdentity(request,env,now) : mode === 'key' && await session(request,env,now);
-    if (!allowed) return json({error:'Unauthorized'},401);
+    if (!await authenticatedAccount(request,env,now)) return json({error:'Unauthorized'},401);
     const month = new Date(now*1000).toISOString().slice(0,7);
     const [usage, latest] = await env.DB.batch([
       env.DB.prepare('SELECT id,label,revoked,online,uplink,downlink,since,at,gaps FROM credential_usage WHERE month=? ORDER BY revoked,label').bind(month),

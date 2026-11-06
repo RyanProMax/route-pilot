@@ -2,6 +2,7 @@
   "account_id": "YOUR_CLOUDFLARE_ACCOUNT_ID",
   "zone": "example.com",
   "status_hostname": "status.example.com",
+  "bootstrap_admin_email": "admin@example.com",
   "ssh_host": "my-vps",
   "instance": {
     "id": "node-1",

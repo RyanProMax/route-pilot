@@ -1,16 +1,11 @@
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-import {DatabaseSync} from 'node:sqlite';
+import {database} from './d1.mjs';
 import {randomBytes,createCipheriv} from 'node:crypto';
 import {test} from 'node:test';
 import {privateAPI,digest,usageStatements,hostLoad} from '../cloud/private-api.mjs';
 
 function setup() {
-  const sql=new DatabaseSync(':memory:');
-  sql.exec(readFileSync(new URL('../cloud/migrations/0004_private_control.sql',import.meta.url),'utf8'));
-  sql.exec('CREATE TABLE reports(minute INTEGER, ts INTEGER, metrics TEXT)');
-  const DB={prepare(query){let args=[];return {bind(...a){args=a;return this;},async first(){return sql.prepare(query).get(...args) ?? null;},async run(){return sql.prepare(query).run(...args);},async all(){return {results:sql.prepare(query).all(...args)};}};},
-    async batch(statements){return Promise.all(statements.map(s=>s.all()));}};
+  const {sql,DB}=database();
   return {sql,env:{DB,INSTANCE_ID:'node-1',SUBSCRIPTION_KEY:randomBytes(32).toString('base64')}};
 }
 function req(path,options={}) {return new Request('https://status.example.com'+path,options);}
@@ -25,7 +20,6 @@ const post=(body,authorization)=>({method:'POST',headers:{'Content-Type':'applic
 
 test('independent encrypted subscriptions, rotation, revocation and tamper rejection',async()=>{
   const {sql,env}=setup();
-  env.ADMIN_AUTH_MODE='access';
   try {
     const management=randomBytes(32).toString('hex');env.PROVISION_SHA256=await digest(management);
     const a=randomBytes(32).toString('base64url'),b=randomBytes(32).toString('base64url');
@@ -48,25 +42,6 @@ test('independent encrypted subscriptions, rotation, revocation and tamper rejec
     assert.equal((await privateAPI(req('/sub/'+rotated+'/clash.yaml'),env,102)).status,404);
     assert.equal(await (await privateAPI(req('/sub/'+b+'/clash.yaml'),env,102)).text(),'private-B');
   } finally{sql.close();}
-});
-
-test('admin session is isolated, same-origin, expiring, HttpOnly and revocable',async()=>{
-  const {sql,env}=setup();
-  try {
-    const key=randomBytes(32).toString('hex');env.ADMIN_SHA256=await digest(key);
-    assert.equal((await privateAPI(req('/private/overview'),env,100)).status,401);
-    assert.equal((await privateAPI(req('/private/session',post({key})),env,100)).status,403);
-    const login=post({key});login.headers.origin='https://status.example.com';
-    const response=await privateAPI(req('/private/session',login),env,100);
-    const setCookie=response.headers.get('set-cookie');
-    for(const flag of ['HttpOnly','Secure','SameSite=Strict','Path=/']) assert(setCookie.includes(flag));
-    const cookie=setCookie.split(';')[0];
-    assert.equal((await privateAPI(req('/private/overview',{headers:{cookie}}),env,101)).status,200);
-    assert.equal((await privateAPI(req('/private/overview',{headers:{cookie}}),env,28901)).status,401);
-    assert.equal((await privateAPI(req('/private/session',{method:'DELETE',headers:{cookie,origin:'https://status.example.com'}}),env,102)).status,200);
-    assert.equal((await privateAPI(req('/private/overview',{headers:{cookie}}),env,103)).status,401);
-    assert.equal((await privateAPI(req('/private/manage/revoke',{...post({id:'a'.repeat(24)}),headers:{cookie}}),env,103)).status,401);
-  } finally {sql.close();}
 });
 
 test('usage is idempotent, monotonic and rejects unbounded or malformed identities',async()=>{
