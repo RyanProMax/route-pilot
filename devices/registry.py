@@ -49,11 +49,12 @@ class Registry:
             d = db.execute('SELECT * FROM devices WHERE label=? AND revoked=0', (label,)).fetchone()
             return dict(d) if d else None
 
-    def create(self, label, client):
+    def create(self, label, client, identity=None):
         if client not in ('clash', 'shadowrocket'): raise ValueError('Invalid client')
         if not isinstance(label,str) or not label.strip() or len(label)>80 or any(ord(c)<32 for c in label):
             raise ValueError('Invalid device label')
-        d = {'id': secrets.token_hex(12), 'label': label, 'client': client,
+        if identity is not None and not re.fullmatch(r'[a-f0-9]{24}',identity):raise ValueError('Invalid identity')
+        d = {'id': identity or secrets.token_hex(12), 'label': label, 'client': client,
              'credential': str(uuid.uuid4()), 'revoked': 0, 'created': int(time.time())}
         with self.connect() as db:
             db.execute('INSERT INTO devices(id,label,client,credential,revoked,created) VALUES(:id,:label,:client,:credential,:revoked,:created)', d)

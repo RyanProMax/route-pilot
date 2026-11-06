@@ -6,13 +6,14 @@
 - **私有订阅**：Clash Verge、Shadowrocket 通过 HTTPS 更新配置；独立随机令牌、加密存储、按凭证撤销。
 - **独立监控**：VPS 每分钟自检上报，Cloudflare 外部探测，D1 保存历史，无需 Mac 常驻。
 - **状态页**：React + TypeScript + Ant Design，支持 PWA、多实例切换、流量余额及 24 小时 / 7 天 / 30 天记录。
-- **管理页**：直接接入 Google 登录，RP 管理账号与会话；查看主机负载和各凭证月度流量。
+- **管理后台**：Google 登录、主机负载、凭证创建/撤销、订阅地址重置、月度用量和操作记录。公开首页与后台共用一个前端项目。
 
 ```text
 Agent + Skill ── SSH ── VPS ── 固定 IPv4 出口
                     └─ 加密配置 ── CF 私有订阅 ── Clash Verge / Shadowrocket
 
-VPS 自检 + Cloudflare 探测 ── Worker + D1 ── 缓存 API ── WebUI
+VPS 自检 + Cloudflare 探测 ── Worker + D1 ── 缓存 API ── 公开状态页
+管理员后台 ── 私有任务队列 ── VPS 定时领取并执行
 ```
 
 ## 开始使用
@@ -39,6 +40,6 @@ node --test tests/*.test.mjs
 npm --prefix web run build:status
 ```
 
-[订阅与管理](docs/subscriptions.md) · [Google 登录](docs/admin-login.md) · [运维](docs/operations.md) · [安全](SECURITY.md)
+[后台管理](docs/admin-console.md) · [订阅与管理](docs/subscriptions.md) · [Google 登录](docs/admin-login.md) · [运维](docs/operations.md) · [安全](SECURITY.md)
 
 MIT License。内置 Manrope 字体遵循 SIL OFL。

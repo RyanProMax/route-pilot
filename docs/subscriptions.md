@@ -1,8 +1,10 @@
 # Subscriptions and private usage
 
-VPS runs Xray and the existing minute reporter. Cloudflare handles subscription downloads, encrypted storage, public status and the private admin page. No VPS web server, tunnel or extra hostname is required. Proxy traffic still connects directly to the VPS.
+VPS runs Xray, the minute reporter and an optional 30-second credential management task. Cloudflare handles subscription downloads, encrypted storage, public status and the private admin page. No VPS web server, tunnel or extra hostname is required. Proxy traffic still connects directly to the VPS.
 
 ## Publish
+
+With web management enabled, use the [admin console](admin-console.md). CLI publication deliberately refuses to overwrite its authoritative token state. CLI node revocation remains available for recovery. The commands below apply before enabling the control task.
 
 Run `ops/publish_monitor.py` to apply the migration and create the Worker secrets. Its private instance directory holds `subscription-key`, `provision-key` and `report-token` (mode 600). Back up these files privately.
 
@@ -36,12 +38,12 @@ Node revocation validates and replaces the Xray configuration, then restarts Xra
 
 ## Admin and accounting
 
-Open `/admin/` on the deployed status hostname. [Google login](admin-login.md) verifies identity directly at the Worker; RP manages allowed accounts and revocable sessions in D1. No public registration or fallback key login is available. The page is read-only; reporting and provisioning retain separate credentials. Browser sessions use eight-hour Secure, HttpOnly, SameSite=Lax cookies, with only their hashes stored in D1.
+Open `/admin/` on the deployed status hostname. [Google login](admin-login.md) verifies identity directly at the Worker; RP manages allowed accounts and revocable sessions in D1. No public registration or fallback key login is available. The console manages credential lifecycle through a bounded task queue; reporting, provisioning and the control task use separate credentials. Browser sessions use eight-hour Secure, HttpOnly, SameSite=Lax cookies, with only their hashes stored in D1.
 
-The public page shows CPU usage, memory, disk and one-minute system load. Credential names and traffic are only available through the authenticated management API. Private responses are not cached by CF, the browser or the service worker. Public status keeps its 60-second cache.
+The public page shows aggregate CPU usage, memory, disk and one-minute system load. Credential names and traffic are only available through the authenticated management API. Private responses are not cached by CF, the browser or the service worker. Public status keeps its 60-second cache.
 
-The reporter persists deltas from Xray's non-resetting counters before upload. Duplicate/retried reports do not add traffic twice; a service restart preserves the accumulated totals. Accounting begins at the first baseline, without inventing earlier usage. Unobserved traffic immediately before a restart can be lost; the admin table marks reset gaps with `*`. A single interval spanning a UTC month boundary is split proportionally. Totals are proxy payload bytes, not provider-billed NIC traffic.
+The reporter persists deltas from Xray's non-resetting counters before upload. Duplicate/retried reports do not add traffic twice; a service restart preserves the accumulated totals. Accounting begins at the first baseline, without inventing earlier usage. Unobserved traffic immediately before a restart can be lost; the admin table marks sampling gaps with `*`. A single interval spanning a UTC month boundary is split proportionally. Totals are proxy payload bytes, not provider-billed NIC traffic.
 
-Current deployment supports up to 32 registered/legacy accounting identities per instance. Monthly usage is retained for about 13 months; monitoring history remains 31 days. Credentials are accounting identities, not physical devices. Multiple clients sharing one credential share its usage and revocation scope.
+Web management supports 32 active registered identities and 512 retained inventory/accounting identities per instance. Monthly usage is retained for about 13 months; monitoring history remains 31 days. Credentials are accounting identities, not physical devices. Multiple clients sharing one credential share its usage and revocation scope.
 
 Private routes have a best-effort per-location rate limit. This reduces abuse of decryption and database calls, but requests still invoke a Worker and are not a guarantee against exhausting the free invocation allowance.

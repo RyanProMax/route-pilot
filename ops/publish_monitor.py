@@ -44,6 +44,7 @@ def private_secrets(state):
     if len(base64.b64decode(key,validate=True)) != 32: raise ValueError('Invalid encryption key')
     result = {'SUBSCRIPTION_KEY':key,
               'PROVISION_SHA256':hashlib.sha256(private_key(state,'provision-key').encode()).hexdigest()}
+    if (state/'control-key').exists():result['CONTROL_SHA256']=hashlib.sha256(private_key(state,'control-key').encode()).hexdigest()
     return result
 
 
@@ -72,7 +73,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="routepilot-edge-") as directory:
         stage = Path(directory)
         (stage / "cloud").mkdir()
-        for name in ("wrangler.json", "worker.mjs", "status-site.json", "public-status.mjs", "status-cache.mjs", "private-api.mjs", "auth.mjs", "package.json", "package-lock.json"):
+        for name in ("wrangler.json", "worker.mjs", "status-site.json", "public-status.mjs", "status-cache.mjs", "private-api.mjs", "admin-api.mjs", "auth.mjs", "package.json", "package-lock.json"):
             shutil.copyfile(ROOT / "cloud" / name, stage / "cloud" / name)
         shutil.copytree(ROOT / "cloud/migrations", stage / "cloud/migrations")
         (stage/"cloud/wrangler.json").write_text(json.dumps(config))

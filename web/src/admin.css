@@ -1,0 +1,883 @@
+.console-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.console-brand span {
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+.eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #718078;
+}
+.login-page {
+  min-height: 100dvh;
+  background: #f7f9f7;
+  display: flex;
+  flex-direction: column;
+}
+.login-page > header,
+.login-page > footer {
+  width: min(100% - 96px, 1240px);
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.login-page > header {
+  height: 112px;
+  flex-shrink: 0;
+}
+.login-page > header > a:last-child {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: #60736a;
+}
+.login-main {
+  width: min(100% - 96px, 1060px);
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 100px;
+  align-items: center;
+  padding: 60px 0 100px;
+}
+.login-context h1 {
+  font-size: 39px;
+  font-weight: 600;
+  line-height: 1.55;
+  letter-spacing: -0.045em;
+  margin: 22px 0 36px;
+}
+.login-context h1 span {
+  color: #7e9287;
+}
+.login-map {
+  display: flex;
+  align-items: center;
+  width: 340px;
+  max-width: 100%;
+  margin: 36px 0;
+  color: #527a66;
+}
+.map-source,
+.map-target,
+.map-node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid #dce5df;
+  border-radius: 14px;
+  background: #fff;
+  flex-shrink: 0;
+}
+.map-node {
+  width: 64px;
+  height: 64px;
+  border-color: #a9c3b4;
+  box-shadow: 0 0 0 8px #eaf0eb;
+}
+.map-path {
+  flex: 1;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  height: 1px;
+  background: #d7e1d9;
+}
+.map-path span {
+  width: 3px;
+  height: 3px;
+  background: #a0b7a9;
+  border-radius: 50%;
+}
+.login-capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  color: #6b7f73;
+  font-size: 12px;
+}
+.login-capabilities > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.login-panel {
+  background: #fff;
+  border: 1px solid #e3e9e4;
+  border-radius: 18px;
+  padding: 38px;
+  box-shadow: 0 12px 40px -24px #244b3f30;
+}
+.login-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  background: #edf3ee;
+  color: #38614e;
+  margin-bottom: 26px;
+}
+.login-panel h2 {
+  font-size: 24px;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+.login-panel > p {
+  color: #718078;
+  font-size: 13px;
+  margin: 12px 0 30px;
+  line-height: 1.8;
+}
+.login-panel .ant-btn {
+  height: 48px;
+  box-shadow: none;
+  font-size: 14px;
+  gap: 12px;
+}
+.google-letter {
+  font-size: 18px;
+  font-weight: 700;
+}
+.login-panel .ant-alert {
+  margin-bottom: 18px;
+}
+.login-footnote {
+  font-size: 11px;
+  color: #6f8175;
+  margin-top: 22px;
+  text-align: center;
+  line-height: 1.8;
+}
+.login-page > footer {
+  font-size: 11px;
+  color: #6f8175;
+  padding-bottom: 28px;
+}
+.console-layout {
+  min-height: 100dvh;
+  background: #f6f8f6;
+}
+.console-sidebar.ant-layout-sider {
+  position: fixed;
+  inset: 0 auto 0 0;
+  border-right: 1px solid #e6ece7;
+  z-index: 20;
+}
+.console-sidebar .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+  padding: 30px 14px 22px;
+}
+.console-sidebar .console-brand {
+  padding: 0 12px;
+  margin-bottom: 51px;
+}
+.console-sidebar .console-brand span {
+  font-size: 21px;
+}
+.console-nav-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #6f8175;
+  padding: 0 18px 12px;
+}
+.console-sidebar .ant-menu,
+.console-mobile-menu .ant-menu {
+  border: 0 !important;
+  background: transparent;
+}
+.console-sidebar .ant-menu-item,
+.console-mobile-menu .ant-menu-item {
+  height: 44px;
+  line-height: 44px;
+  margin: 4px 0;
+  width: 100%;
+  color: #66796c;
+  font-size: 13px;
+}
+.console-sidebar .ant-menu-item-selected,
+.console-mobile-menu .ant-menu-item-selected {
+  background: #eaf1ec;
+  color: #244b3f;
+  font-weight: 600;
+}
+.console-public-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #7b8a81;
+  margin: 28px 17px;
+}
+.console-public-link > svg:last-child {
+  margin-left: auto;
+}
+.console-sidebar-note {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 0 16px;
+  color: #6f8175;
+  font-size: 11px;
+}
+.tiny-dot,
+.health-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a6b8ab;
+}
+.console-body.ant-layout {
+  margin-left: 224px;
+  background: #f6f8f6;
+  min-width: 0;
+}
+.console-header {
+  height: 76px;
+  background: #fff;
+  border-bottom: 1px solid #e8eee9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  font-size: 12px;
+  gap: 16px;
+}
+.header-workspace {
+  color: #6f8175;
+}
+.console-header svg {
+  color: #6f8175;
+}
+.account-button.ant-btn {
+  height: 40px;
+  font-size: 12px;
+  color: #65766b;
+  gap: 9px;
+  max-width: 50%;
+}
+.account-button > span:not(.ant-avatar) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.account-avatar.ant-avatar {
+  background: #eaf1eb;
+  color: #52745f;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.console-main {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 38px 40px 32px;
+  flex: 1;
+  min-width: 0;
+}
+.console-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.console-page-heading h1 {
+  font-size: 27px;
+  letter-spacing: -0.04em;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.console-page-heading .ant-btn {
+  height: 38px;
+  font-size: 12px;
+  box-shadow: none;
+}
+.last-updated {
+  font-size: 11px;
+  color: #6f8175;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.summary-grid > article {
+  background: #fff;
+  border: 1px solid #e5ebe6;
+  border-radius: 12px;
+  padding: 22px 23px;
+  min-width: 0;
+}
+.summary-grid > article > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #718176;
+}
+.summary-grid > article > span svg {
+  color: #8ba192;
+}
+.summary-grid strong {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 29px;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  margin: 16px 0 10px;
+  white-space: nowrap;
+}
+.summary-grid em {
+  font-size: 12px;
+  color: #6f8175;
+  font-style: normal;
+  font-weight: 400;
+  margin-top: 9px;
+}
+.summary-grid small {
+  font-size: 11px;
+  color: #6f8175;
+}
+.healthy-text {
+  color: #2d7051;
+}
+.health-dot.is-healthy {
+  background: #159b76;
+  box-shadow: 0 0 0 4px #e7f5ed;
+}
+.console-panel {
+  background: #fff;
+  border: 1px solid #e5ebe6;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 0;
+}
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.panel-heading h2 {
+  font-size: 14px;
+  font-weight: 600;
+}
+.panel-heading .ant-badge-status-text {
+  font-size: 11px;
+  color: #6f8175;
+}
+.panel-heading .ant-btn {
+  font-size: 11px;
+  height: auto;
+  padding: 0;
+  color: #688271;
+  gap: 2px;
+}
+.node-panel {
+  margin-bottom: 24px;
+}
+.node-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.node-icon {
+  background: #f3f6f3;
+  border-radius: 10px;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+}
+.node-identity h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.node-identity > div > span {
+  font-size: 11px;
+  color: #6f8175;
+}
+.node-identity > .ant-tag {
+  margin-left: 8px;
+  background: #f4f7f3;
+  border: 0;
+  color: #7e9082;
+  font-size: 10px;
+}
+.console-panel .host-metrics {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  gap: 32px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.console-panel .host-metric-label {
+  font-size: 11px;
+  color: #6f8175;
+}
+.console-panel .host-metric-label > span:last-child {
+  color: #385747;
+  font-weight: 500;
+}
+.overview-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.usage-list > div {
+  margin-bottom: 21px;
+}
+.usage-list > div:last-child {
+  margin-bottom: 0;
+}
+.usage-list .ant-flex {
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.usage-list strong {
+  font-weight: 500;
+  color: #6d8174;
+}
+.recent-events > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+}
+.event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c1d0c5;
+  flex-shrink: 0;
+}
+.event-dot.done {
+  background: #82a793;
+}
+.event-dot.failed {
+  background: #d2746b;
+}
+.recent-events strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+.recent-events small {
+  display: block;
+  font-size: 11px;
+  color: #6f8175;
+  margin-top: 4px;
+}
+.recent-events time {
+  font-size: 11px;
+  color: #6f8175;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.console-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 40px 24px;
+  font-size: 10px;
+  color: #6f8175;
+}
+.console-footer a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.credentials-panel,
+.activity-panel {
+  padding: 0;
+  overflow: hidden;
+}
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 24px;
+}
+.table-toolbar > .ant-input-affix-wrapper {
+  width: 260px;
+  font-size: 12px;
+}
+.table-toolbar .ant-select {
+  width: 124px;
+  font-size: 12px;
+}
+.table-toolbar .ant-input-prefix {
+  color: #9aaa9f;
+  margin-right: 8px;
+}
+.table-toolbar > span:last-child {
+  margin-left: auto;
+  color: #6f8175;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.console-panel .ant-table {
+  font-size: 12px;
+  color: #4b6355;
+}
+.console-panel .ant-table-thead > tr > th {
+  background: #f9fbf9;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6f8175;
+  border-bottom: 1px solid #edf1ed;
+  padding: 13px 20px;
+}
+.console-panel .ant-table-tbody > tr > td {
+  padding: 18px 20px;
+  border-bottom: 1px solid #f1f4f1;
+}
+.console-panel .ant-table-tbody > tr:hover > td {
+  background: #fafcf9 !important;
+}
+.console-panel .ant-table-tbody > tr:last-child > td {
+  border-bottom: 0;
+}
+.console-panel .ant-table-pagination {
+  padding: 0 20px;
+}
+.console-panel .ant-tag {
+  font-size: 10px;
+  border: 0;
+  line-height: 22px;
+  border-radius: 5px;
+}
+.console-panel .ant-badge-status-text {
+  font-size: 11px;
+  color: #758a7b;
+}
+.console-panel .ant-btn {
+  font-size: 11px;
+}
+.console-panel .ant-btn-text {
+  color: #5d806b;
+}
+.console-panel .ant-btn[disabled] {
+  color: #b5c0b8;
+}
+.credential-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.credential-icon {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
+  background: #f0f5f0;
+  border: 1px solid #e4ece4;
+  border-radius: 9px;
+  color: #7a9985;
+}
+.credential-name strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+.credential-name small {
+  display: block;
+  font-size: 10px;
+  color: #6f8175;
+  margin-top: 4px;
+}
+.credentials-panel > .ant-alert {
+  margin: 18px 20px 0;
+}
+.console-alert {
+  margin-bottom: 20px;
+}
+.console-loading .ant-skeleton {
+  padding: 28px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+.mobile-nav-toggle.ant-btn {
+  display: none;
+}
+.console-mobile-menu .console-brand {
+  margin-bottom: 32px;
+}
+.console-mobile-menu .console-sidebar-note {
+  margin-top: 40px;
+}
+.drawer-description {
+  font-size: 13px;
+  color: #7b8e7f;
+  line-height: 1.8;
+  margin: 0 0 28px;
+}
+.access-heading {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 30px;
+}
+.access-heading h3 {
+  font-size: 16px;
+  margin: 0 0 7px;
+}
+.access-heading p {
+  font-size: 12px;
+  color: #819387;
+  margin: 0;
+}
+.subscription-links > section {
+  margin-bottom: 26px;
+}
+.subscription-links h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.subscription-links small {
+  font-size: 11px;
+  color: #6f8175;
+}
+.subscription-links textarea.ant-input {
+  margin-top: 12px;
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  background: #f8faf7;
+  color: #6a8071;
+  resize: none;
+}
+@media (min-width: 1500px) {
+  .console-main {
+    padding-top: 48px;
+  }
+}
+@media (max-width: 1100px) {
+  .login-main {
+    gap: 48px;
+  }
+  .login-context h1 {
+    font-size: 32px;
+  }
+  .console-main {
+    padding: 28px 24px;
+  }
+  .console-header {
+    padding: 0 24px;
+  }
+  .summary-grid {
+    gap: 12px;
+  }
+  .summary-grid > article {
+    padding: 20px 16px;
+  }
+  .summary-grid strong {
+    font-size: 25px;
+  }
+  .overview-bottom {
+    gap: 16px;
+  }
+  .console-panel {
+    padding: 20px;
+  }
+  .credentials-panel,
+  .activity-panel {
+    padding: 0;
+  }
+}
+@media (max-width: 900px) {
+  .console-sidebar.ant-layout-sider {
+    display: none;
+  }
+  .console-body.ant-layout {
+    margin-left: 0;
+  }
+  .mobile-nav-toggle.ant-btn {
+    display: inline-flex;
+  }
+  .header-workspace {
+    display: none;
+  }
+  .console-header > .ant-flex > svg {
+    display: none;
+  }
+  .login-main {
+    gap: 36px;
+  }
+  .login-panel {
+    padding: 28px;
+  }
+  .login-context h1 {
+    font-size: 29px;
+  }
+  .login-capabilities {
+    gap: 12px;
+    font-size: 11px;
+  }
+  .login-map {
+    width: 290px;
+  }
+}
+@media (max-width: 640px) {
+  .login-page > header,
+  .login-page > footer {
+    width: calc(100% - 40px);
+  }
+  .login-page > header {
+    height: 84px;
+  }
+  .console-brand span {
+    font-size: 22px;
+  }
+  .login-main {
+    width: calc(100% - 40px);
+    max-width: 420px;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 32px 0 60px;
+  }
+  .login-context h1 {
+    font-size: 28px;
+    margin: 14px 0 0;
+  }
+  .login-map,
+  .login-capabilities {
+    display: none;
+  }
+  .login-panel {
+    padding: 28px;
+  }
+  .login-page > footer {
+    padding-bottom: 20px;
+  }
+  .login-page > header > a:last-child {
+    font-size: 11px;
+  }
+  .console-header {
+    height: 64px;
+    padding: 0 16px;
+  }
+  .account-button.ant-btn {
+    padding: 0;
+  }
+  .account-button > span:last-child:not(.ant-avatar) {
+    display: none;
+  }
+  .console-main {
+    padding: 26px 16px;
+  }
+  .console-page-heading h1 {
+    font-size: 24px;
+  }
+  .console-page-heading {
+    margin-bottom: 22px;
+  }
+  .last-updated {
+    font-size: 10px;
+  }
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .summary-grid > article {
+    padding: 18px 16px;
+  }
+  .summary-grid strong {
+    font-size: 25px;
+    margin: 14px 0 8px;
+  }
+  .console-panel {
+    padding: 20px 18px;
+  }
+  .node-panel {
+    margin-bottom: 16px;
+  }
+  .console-panel .host-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+  .overview-bottom {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .credentials-panel,
+  .activity-panel {
+    padding: 0;
+  }
+  .table-toolbar {
+    padding: 16px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .table-toolbar > .ant-input-affix-wrapper {
+    width: 100%;
+  }
+  .table-toolbar .ant-select {
+    width: 128px;
+  }
+  .console-footer {
+    padding: 0 16px 22px;
+  }
+  .console-panel .ant-table-tbody > tr > td {
+    padding: 16px;
+  }
+  .panel-heading .ant-badge-status-text {
+    font-size: 10px;
+  }
+  .ant-drawer-content-wrapper {
+    max-width: 100vw;
+  }
+  .node-identity {
+    margin-bottom: 24px;
+  }
+  .summary-grid small {
+    font-size: 10px;
+  }
+}
+
+.console-boot {
+  width: min(100% - 40px, 420px);
+  margin: 20vh auto;
+}
+.console-boot > .console-brand {
+  margin-bottom: 40px;
+}
+.console-boot > .ant-alert {
+  margin-top: 12px;
+}
+
+.console-panel .ant-table {
+  font-size: 13px;
+}
+.credential-name strong {
+  font-size: 13px;
+}
+.credential-name small {
+  font-size: 11px;
+}
+.usage-list .ant-flex {
+  font-size: 13px;
+}

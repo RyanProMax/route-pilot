@@ -28,6 +28,14 @@ python3 ops/register_device.py --config /private/routepilot/deploy.json \
 
 A credential may intentionally be shared across devices and native client formats. Publish a private HTTPS subscription with `ops/subscriptions.py publish --directory /private/routepilot/mac` and import its URL as a remote profile. The Agent updates the encrypted copy without changing its download URL or node identity; clients can refresh it. No extra hostname, VPS HTTP origin, tunnel or DNS permission is required. See [subscriptions and management](subscriptions.md).
 
+5. Enable the web console after configuring [Google login](admin-login.md):
+
+```sh
+python3 ops/install_control.py --config /private/routepilot/deploy.json
+```
+
+Open `/admin/` to create credentials, generate or copy subscriptions, rotate download URLs and revoke node access. The root-owned task polls CF every 30 seconds, exits between runs and opens no listening port. Existing locally stored subscription tokens are imported without rotating them. For pre-existing identities, use **生成订阅** once if the console has not yet stored an encrypted retrieval copy. The public `/` page remains anonymous. See [admin console](admin-console.md).
+
 Production identifiers are generated into temporary deployment staging directories. `cloud/wrangler.json` and `cloud/status-site.json` are reusable templates. The public instance manifest is replaced from the private deployment settings during publication.
 
 Cloudflare runs two Workers: `routepilot-web` serves the status/admin pages and PWA assets; `routepilot-server` handles reporting, status APIs, subscriptions and Google authentication. Their names do not depend on the node location. Set `server_worker` and `web_worker` in private settings for separate installations in the same account. Renaming a live Worker must preserve its immutable Worker ID, secrets, D1 bindings, routes and schedules; do not deploy an empty replacement with a new name.

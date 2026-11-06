@@ -51,7 +51,7 @@ def cloud_configs(c):
     worker['routes'] += [{'pattern':host+prefix+'*','zone_name':zone} for prefix in ('/sub/','/private/')]
     worker['d1_databases'] = [{'binding':'DB','database_name':c['database']['name'],
         'database_id':c['database']['id'],'migrations_dir':'migrations'}]
-    worker['vars'] = {'INSTANCE_ID':i['id'],'IPV4':i['ipv4'],'IPV6':i.get('ipv6',''),
+    worker['vars'] = {'INSTANCE_ID':i['id'],'INSTANCE_NAME':i['name'],'INSTANCE_COUNTRY':i['country'],'IPV4':i['ipv4'],'IPV6':i.get('ipv6',''),
         'PORT':str(i['port']),'PLAN_BANDWIDTH_GB':str(i['bandwidth_gb']), 'APP_ORIGIN':'https://'+host}
     site.update(name=c.get('web_worker','routepilot-web'),account_id=c['account_id'],routes=[{'pattern':host+'/*','zone_name':zone}])
     return worker, site

@@ -24,7 +24,10 @@ def regular(path, create=False):
     info = path.lstat()
     if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_nlink != 1:
         raise ValueError('Private file must be an administrator-owned regular file with one link')
-    path.chmod(0o600)
+    # Read-only systemd mounts may contain an already-private configuration.
+    # Avoid a redundant chmod; never broaden writable paths just to read it.
+    if stat.S_IMODE(info.st_mode) != 0o600:
+        path.chmod(0o600)
     return path
 
 

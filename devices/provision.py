@@ -92,11 +92,12 @@ def provision(registry,settings,label,client):
     with registry.administration():
         return _provision(registry,settings,label,client)
 
-def _provision(registry,settings,label,client):
+def _provision(registry,settings,label,client,identity=None):
     config_path=Path(settings['xray_config']);source=json.loads(config_path.read_text())
     existing=registry.find(label)
     if client not in ('clash','shadowrocket'):raise ValueError('Invalid output format')
-    d=existing or registry.create(label,client)
+    if existing and identity and existing['id']!=identity:raise ValueError('Label belongs to another identity')
+    d=existing or registry.create(label,client,identity)
     try:
         profiles=build_profiles(source,d,settings)
         registry.write_profiles(d['id'],profiles)

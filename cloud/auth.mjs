@@ -28,7 +28,7 @@ export function googleReady(env) {
 export async function authenticatedAccount(request,env,now) {
   const token=cookieValue(request,sessionName);
   if(!token || new URL(request.url).origin!==env.APP_ORIGIN)return null;
-  return env.DB.prepare(`SELECT a.id,a.role FROM rp_sessions s JOIN rp_accounts a ON a.id=s.account_id
+  return env.DB.prepare(`SELECT a.id,a.email,a.role FROM rp_sessions s JOIN rp_accounts a ON a.id=s.account_id
     WHERE s.hash=? AND s.expires>? AND a.disabled=0 AND a.role='admin'`)
     .bind(await digest(token),now).first();
 }

@@ -188,9 +188,7 @@ h2 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
 .host-metric { min-width:0; }
 .host-metric-label { display:flex; justify-content:space-between; gap:12px; font-size:13px; margin-bottom:8px; }
 .host-metric .ant-progress { margin:0; line-height:1; }
-.admin-login { max-width:360px; margin:80px auto; }
-.admin-login h1 { font-size:22px; margin-bottom:32px; }
-.admin-page .section-heading time,.admin-page .section-heading>span,.usage-muted { color:#627168; font-size:12px; }
-.admin-usage .ant-table-cell { white-space:nowrap; }
-.admin-page input { cursor:text; }
 @media(max-width:640px) { .host-metrics { grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-bottom:48px; } }
+
+.public-footer { margin-top: 56px; text-align: center; font-size: 11px; color: #718579; }
+.public-footer a:hover { color: #244b3f; }

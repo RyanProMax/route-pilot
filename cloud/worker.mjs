@@ -57,7 +57,7 @@ async function ingest(request,env) {
   const header = request.headers.get("authorization") || "";
   if (!header.startsWith("Bearer ") || !await authorized(header.slice(7),env.REPORT_SHA256)) return response({error:"Unauthorized"},401);
   if (!request.headers.get("content-type")?.startsWith("application/json")) return response({error:"JSON required"},415);
-  if (Number(request.headers.get("content-length"))>32768) return response({error:"Too large"},413);
+  if (Number(request.headers.get("content-length"))>550000) return response({error:"Too large"},413);
   const reader=request.body?.getReader();
   if (!reader) return response({error:"Empty body"},400);
   let raw="", size=0;
@@ -66,7 +66,7 @@ async function ingest(request,env) {
     const {done,value}=await reader.read();
     if (done) break;
     size+=value.byteLength;
-    if (size>32768) {await reader.cancel();return response({error:"Too large"},413);}
+    if (size>550000) {await reader.cancel();return response({error:"Too large"},413);}
     raw+=decoder.decode(value,{stream:true});
   }
   let report;
@@ -113,7 +113,8 @@ async function observe(env,now) {
 async function prune(env,now) {
   const cutoff=now-31*86400;
   await env.DB.batch(["DELETE FROM samples WHERE ts<?","DELETE FROM reports WHERE minute<?","DELETE FROM events WHERE ts<?","DELETE FROM buckets WHERE bucket+width<?","DELETE FROM connection_buckets WHERE bucket+width<?"].map((sql,i)=>env.DB.prepare(sql).bind(i===1?Math.floor(cutoff/60):cutoff)));
-  await env.DB.batch([env.DB.prepare('DELETE FROM rp_sessions WHERE expires<?').bind(now),
+  await env.DB.batch([env.DB.prepare("DELETE FROM control_jobs WHERE state IN ('done','failed') AND finished<?").bind(now-90*86400),
+    env.DB.prepare('DELETE FROM admin_events WHERE at<?').bind(now-90*86400),env.DB.prepare('DELETE FROM rp_sessions WHERE expires<?').bind(now),
     env.DB.prepare('DELETE FROM oauth_attempts WHERE expires<?').bind(now),
     env.DB.prepare('DELETE FROM credential_usage WHERE month<?').bind(new Date((now-366*86400)*1000).toISOString().slice(0,7))]);
 }

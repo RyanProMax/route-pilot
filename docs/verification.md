@@ -19,3 +19,5 @@ Deployment acceptance must separately record:
 7. Reporter, D1, cached status API and static UI remain available without the operator's Mac.
 
 Record actual machine-specific evidence outside the public repository. Do not replace current acceptance with historical claims, and do not treat Cloudflare TCP success as proof of mobile-network reachability.
+
+Admin acceptance includes desktop/mobile login, overview, navigation, search/filter, create/rename drawers, private subscription retrieval, pending/failed jobs and confirmation dialogs. Unit tests and workerd/D1 tests verify same-origin writes, per-request role checks, lease expiry, replay, encrypted storage and subscription rotation/revocation. A disposable production identity should complete creation, rename, rotation and revocation without changing existing identities. Record this separately from real Google login and device connectivity.

@@ -1,4 +1,5 @@
 import {authAPI, authenticatedAccount, digest, privateHeaders} from './auth.mjs';
+import {adminAPI} from './admin-api.mjs';
 export {digest} from './auth.mjs';
 // Private configuration and usage are never read by public-status.mjs.
 const encoder = new TextEncoder();
@@ -42,6 +43,8 @@ export async function privateAPI(request, env, now) {
     return json({error:'Too many requests'},429,{'Retry-After':'60'});
   const authentication = await authAPI(request,env,now);
   if(authentication)return authentication;
+  const administration=await adminAPI(request,env,now,{readBody,authorized,decrypt,hostLoad});
+  if(administration)return administration;
   if (path.startsWith('/sub/')) {
     const match = /^\/sub\/([A-Za-z0-9_-]{43})\/(clash\.yaml|shadowrocket\.txt|rules\.conf)$/.exec(path);
     if (!match || !['GET','HEAD'].includes(request.method)) return json({error:'Not found'},404);
@@ -101,15 +104,20 @@ export function hostLoad(metrics, ts, now) {
 export function usageStatements(db, input, ts) {
   if (input === undefined) return [];
   const month = new Date(ts*1000).toISOString().slice(0,7);
-  if (!Array.isArray(input) || input.length>32 || new Set(input.map(r=>r.id)).size !== input.length) throw Error('usage');
-  return input.map(row => {
-    if (!/^(?:[a-f0-9]{24}|legacy-\d{1,3})$/.test(row.id ?? '') || typeof row.label !== 'string' || !row.label.length || row.label.length>80 ||
+  if (!Array.isArray(input) || input.length>512 || new Set(input.map(r=>r.id)).size !== input.length) throw Error('usage');
+  for(const row of input) {
+    if (!row || !/^(?:[a-f0-9]{24}|legacy-\d{1,3})$/.test(row.id ?? '') || typeof row.label !== 'string' || !row.label.length || row.label.length>80 ||
         /[\x00-\x1f]/.test(row.label) || row.month!==month || typeof row.online!=='boolean' || typeof row.revoked!=='boolean' ||
         ['uplink','downlink','since','gaps'].some(k=>!Number.isSafeInteger(row[k]) || row[k]<0) || row.since>ts) throw Error('usage');
-    return db.prepare(`INSERT INTO credential_usage(id,month,label,revoked,online,uplink,downlink,since,at,gaps) VALUES(?,?,?,?,?,?,?,?,?,?)
-      ON CONFLICT(id,month) DO UPDATE SET label=excluded.label,revoked=excluded.revoked,online=excluded.online,
-      uplink=MAX(credential_usage.uplink,excluded.uplink),downlink=MAX(credential_usage.downlink,excluded.downlink),
-      since=MIN(credential_usage.since,excluded.since),at=excluded.at,gaps=MAX(credential_usage.gaps,excluded.gaps)
-      WHERE excluded.at>credential_usage.at`).bind(row.id,month,row.label,Number(row.revoked),Number(row.online),row.uplink,row.downlink,row.since,ts,row.gaps);
-  });
+  }
+  if(!input.length)return [];
+  return [db.prepare(`INSERT INTO credential_usage(id,month,label,revoked,online,uplink,downlink,since,at,gaps)
+    SELECT json_extract(value,'$.id'),json_extract(value,'$.month'),json_extract(value,'$.label'),
+     json_extract(value,'$.revoked'),json_extract(value,'$.online'),json_extract(value,'$.uplink'),
+     json_extract(value,'$.downlink'),json_extract(value,'$.since'),?,json_extract(value,'$.gaps')
+    FROM json_each(?) WHERE 1
+    ON CONFLICT(id,month) DO UPDATE SET label=excluded.label,revoked=excluded.revoked,online=excluded.online,
+     uplink=MAX(credential_usage.uplink,excluded.uplink),downlink=MAX(credential_usage.downlink,excluded.downlink),
+     since=MIN(credential_usage.since,excluded.since),at=excluded.at,gaps=MAX(credential_usage.gaps,excluded.gaps)
+     WHERE excluded.at>credential_usage.at`).bind(ts,JSON.stringify(input))];
 }

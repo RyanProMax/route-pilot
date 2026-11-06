@@ -78,7 +78,7 @@ def collect(directory, now, port, service):
     path = directory/'credential-accounting.json'
     previous = json.loads(path.read_text()) if path.exists() else None
     state, percent, usage = advance(previous,now,boot+':'+process,cpu,readings,labels)
-    if len(usage)>32: raise ValueError('At most 32 credentials supported per instance')
+    if len(usage)>512: raise ValueError('At most 512 retained credential identities supported per instance')
     with NamedTemporaryFile(mode='w',dir=directory,delete=False) as file:
         os.fchmod(file.fileno(),0o600)
         json.dump(state,file,separators=(',',':')); file.flush(); os.fsync(file.fileno())
