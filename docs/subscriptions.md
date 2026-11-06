@@ -19,6 +19,8 @@ First export the identity with `ops/register_device.py`. Publishing refreshes th
 - `shadowrocket.txt`: Base64 subscription containing native VLESS links.
 - `rules.conf`: separate Shadowrocket routing configuration. Import it and select configuration routing; the node subscription alone does not install routing rules.
 
+Downloads advertise `route-pilot · <node name>.<extension>` through UTF-8 `Content-Disposition: filename*`, with an unquoted ASCII fallback. This avoids escaped quotation marks in Clash Verge Rev's filename parsing. Subscription paths and encrypted profile bodies are unchanged. Verge retains an existing profile's local name and description on refresh: edit its display name once to remove an old filename. Its secondary line falls back to the subscription hostname when no local description is set; a server header cannot replace that local description.
+
 Downloads use independent random 256-bit bearer tokens. D1 stores token digests and authenticated ciphertext; the decryption key stays in Worker secrets. Downloads bypass caches and use no application access logs. The URL grants access to the node credential: share it only with its intended holder. Cloudflare's account administrators and the operator remain trusted parties.
 
 ## Rotate and revoke

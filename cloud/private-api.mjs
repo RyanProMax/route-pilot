@@ -53,9 +53,14 @@ export async function privateAPI(request, env, now) {
     let content;
     try {content = (await decrypt(row, env))[match[2]];} catch {return json({error:'Unavailable'},503);}
     if (typeof content !== 'string') return json({error:'Not found'},404);
+    const title = 'route-pilot · ' + (env.INSTANCE_NAME || env.INSTANCE_ID || '节点');
+    const extension = match[2].split('.').at(-1), filename = title + '.' + extension;
+    // RFC 6266/8187: Verge prefers filename*. An unquoted ASCII fallback also
+    // avoids its debug-formatted HeaderValue leaking escaped quotation marks.
+    const encoded = encodeURIComponent(filename).replace(/[!'()*]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
     return new Response(request.method === 'HEAD' ? null : content, {headers:{...headers,
       'Content-Type':'text/plain; charset=utf-8', 'profile-update-interval':'24',
-      'Content-Disposition':`attachment; filename="${match[2]}"`}});
+      'Content-Disposition':`attachment; filename=route-pilot.${extension}; filename*=UTF-8''${encoded}`}});
   }
   if (path === '/private/overview' && request.method === 'GET') {
     if (!await authenticatedAccount(request,env,now)) return json({error:'Unauthorized'},401);

@@ -18,6 +18,46 @@ function envelope(env,id,token,files) {
 }
 const post=(body,authorization)=>({method:'POST',headers:{'Content-Type':'application/json',...(authorization?{authorization:'Bearer '+authorization}:{})},body:JSON.stringify(body)});
 
+// Mirrors Verge Rev's prfitem.rs + help::parse_str for ASCII response headers:
+// debug-format HeaderValue, trim outer quotes, prefer filename*, then decode UTF-8.
+function vergeName(header) {
+  const debug = JSON.stringify(header).replace(/^"+|"+$/g, '');
+  const params = new Map(debug.split(';').map(part => {
+    const value = part.trim(), split = value.indexOf('=');
+    return [value.slice(0, split), value.slice(split + 1)];
+  }));
+  return params.has('filename*') ? decodeURIComponent(params.get('filename*')).split("''").at(-1)
+    : params.get('filename')?.replace(/^"+|"+$/g, '');
+}
+
+test('subscription metadata survives Verge parsing without changing encrypted profiles or download behavior', async () => {
+  assert.notEqual(vergeName('attachment; filename="clash.yaml"'), 'clash.yaml');
+  const {sql,env}=setup();
+  try {
+    const token=randomBytes(32).toString('base64url'), id='c'.repeat(24);
+    const files={'clash.yaml':'proxies: []\n','shadowrocket.txt':'c3ludGhldGlj\n','rules.conf':'[Rule]\nFINAL,DIRECT\n'};
+    const row=await envelope(env,id,token,files);
+    sql.prepare('INSERT INTO subscriptions(id,token_hash,ciphertext,iv,revoked,updated) VALUES(?,?,?,?,0,1)').run(id,row.token_hash,row.ciphertext,row.iv);
+    for (const name of ['东京节点', "Tokyo (JP)! O'Hare *", undefined]) {
+      env.INSTANCE_NAME=name;
+      for (const [file,body] of Object.entries(files)) {
+        const get=await privateAPI(req('/sub/'+token+'/'+file),env,100);
+        const head=await privateAPI(req('/sub/'+token+'/'+file,{method:'HEAD'}),env,100);
+        assert.equal(get.status,200);assert.equal(head.status,200);assert.equal(head.body,null);
+        assert.equal(await get.text(),body);
+        const disposition=get.headers.get('content-disposition'), ext=file.split('.').at(-1);
+        assert.match(disposition,/^[\x20-\x7e]+$/);assert(!disposition.includes('"'));assert(!disposition.includes('\\'));
+        assert(disposition.startsWith(`attachment; filename=route-pilot.${ext}; filename*=UTF-8''`));
+        assert.equal(vergeName(disposition),`route-pilot · ${name || 'node-1'}.${ext}`);
+        for(const key of ['content-disposition','content-type','cache-control','profile-update-interval'])assert.equal(head.headers.get(key),get.headers.get(key));
+        assert.match(get.headers.get('cache-control'),/no-store/);assert.equal(get.headers.get('profile-update-interval'),'24');
+      }
+    }
+    assert.equal(sql.prepare('SELECT ciphertext FROM subscriptions WHERE id=?').get(id).ciphertext,row.ciphertext);
+    assert.equal((await privateAPI(req('/sub/'+token+'/clash.yaml',{method:'POST'}),env,100)).status,404);
+  } finally {sql.close();}
+});
+
 test('independent encrypted subscriptions, rotation, revocation and tamper rejection',async()=>{
   const {sql,env}=setup();
   try {
