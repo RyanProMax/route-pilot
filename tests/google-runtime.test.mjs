@@ -16,7 +16,7 @@ test('Google callback exchanges tokens in the Workers runtime and rejects creden
   const mock=createFetchMock();mock.disableNetConnect();
   const origin='https://status.example.com',client='test.apps.googleusercontent.com';
   const mf=new Miniflare({modules:true,script:bundle.outputFiles[0].text,compatibilityDate:'2026-07-01',
-    d1Databases:['DB'],bindings:{APP_ORIGIN:origin,GOOGLE_CLIENT_ID:client,GOOGLE_CLIENT_SECRET:'test-secret-123456789'},fetchMock:mock});
+    d1Databases:['DB'],bindings:{APP_ORIGIN:origin,GOOGLE_CLIENT_ID:client,GOOGLE_CLIENT_SECRET:'x'.repeat(32)},fetchMock:mock});
   try{
     const db=await mf.getD1Database('DB');
     for(const name of ['0004_private_control.sql','0005_google_accounts.sql'])
