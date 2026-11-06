@@ -7,7 +7,7 @@ import { remainingTraffic } from './traffic';
 import type { Item, Range, State, StatusBundle, Summary } from './data';
 import { HostMetrics } from './load';
 import type { HostLoad } from './load';
-import { HistoryBars, displayTime, labels, states, windows } from './status-history';
+import { HistoryBars, labels, states, windows } from './status-history';
 
 type Node = {
   instance: { id: string; name: string };
@@ -122,6 +122,5 @@ export function AdminOverview({ node, revision, refresh }: { node: Node; revisio
         <span className="traffic-remaining">{traffic ? Number(traffic.percent.toFixed(1)) + '% · 按出站流量估算' : '暂无流量数据'}</span>
       </div>
     </section>
-    {data && <div className="history-updated">历史更新于 {displayTime(data.at)}</div>}
   </>;
 }

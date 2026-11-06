@@ -15,7 +15,6 @@
 .console-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
 .console-page-heading h1 { font-size: 28px; line-height: 1.5; font-weight: 500; letter-spacing: -.025em; }
 .last-updated { display: flex; align-items: center; gap: 22px; font-size: 13px; color: var(--rp-muted); }
-.last-updated .ant-badge-status-text { color: var(--rp-muted); font-size: 13px; }
 .node-summary { display: flex; align-items: center; gap: 22px; padding: 23px 26px; border: 1px solid var(--rp-line); border-radius: 9px; }
 .node-icon { width: 54px; height: 54px; flex-shrink: 0; border-radius: 12px; background: #f0f3f7; display: grid; place-items: center; color: #40506b; }
 .node-description { min-width: 0; }
@@ -62,7 +61,6 @@
 .resource-estimate { font-size: 14px; color: var(--rp-muted); }
 .monthly-traffic .ant-progress { margin: 0; }
 .traffic-remaining { font-size: 11px; color: var(--rp-muted); }
-.history-updated { margin-top: 14px; text-align: right; color: var(--rp-muted); font-size: 11px; }
 .console-footer { display: flex; justify-content: space-between; padding: 16px 3.8% 26px; color: var(--rp-muted); font-size: 11px; }
 .console-panel { background: #fff; border: 1px solid #e2e7ef; border-radius: 10px; min-width: 0; overflow: hidden; }
 .credential-tabs .ant-tabs-nav { margin-bottom: 22px; }
@@ -121,7 +119,6 @@
   .console-navigation .ant-btn { padding-inline: 12px; font-size: 14px; }
   .console-main { padding: 28px 24px; }
   .last-updated { font-size: 11px; gap: 12px; }
-  .last-updated .ant-badge-status-text { font-size: 11px; }
   .node-summary { padding: 22px; align-items: flex-start; }
   .node-facts > span:first-child { border: 0; padding: 0; }
   .console-history .status-table .ant-table-tbody > tr > td { height: auto; padding: 0; }

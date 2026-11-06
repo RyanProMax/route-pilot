@@ -635,7 +635,6 @@ function Admin() {
             ) : (
               <span className="last-updated">
                 更新于 {time(data?.reportedAt ?? null)}
-                {page === "overview" && <Badge color={controlFresh ? "#159b76" : "#bd9425"} text={controlFresh ? "管理任务在线" : "管理任务待连接"} />}
               </span>
             )}
           </div>

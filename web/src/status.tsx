@@ -293,7 +293,6 @@ function StatusPage({ initial }: { initial: InitialData }) {
             </section>
           )}
         </main>
-        <footer className="public-footer"><a href="/admin/">管理控制台</a></footer>
       </div>
     </ConfigProvider>
   );
