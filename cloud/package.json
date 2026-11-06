@@ -1,0 +1,6 @@
+{
+  "name": "route-pilot-edge",
+  "private": true,
+  "type": "module",
+  "dependencies": {"jose": "6.2.15"}
+}

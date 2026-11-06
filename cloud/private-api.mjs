@@ -1,3 +1,4 @@
+import {accessIdentity, adminMode} from './access-auth.mjs';
 // Private configuration and usage are never read by public-status.mjs.
 const encoder = new TextEncoder();
 const hex = bytes => Array.from(bytes, x => x.toString(16).padStart(2, '0')).join('');
@@ -60,6 +61,11 @@ export async function privateAPI(request, env, now) {
       'Content-Type':'text/plain; charset=utf-8', 'profile-update-interval':'24',
       'Content-Disposition':`attachment; filename="${match[2]}"`}});
   }
+  if (path === '/private/auth' && request.method === 'GET') {
+    const mode = adminMode(env);
+    return ['key','access'].includes(mode) ? json({mode}) : json({error:'Unavailable'},503);
+  }
+  if (path === '/private/session' && adminMode(env) !== 'key') return json({error:'Not found'},404);
   if (path === '/private/session' && request.method === 'POST') {
     if (!sameOrigin(request)) return json({error:'Forbidden'},403);
     let body; try {body = await readBody(request,512);} catch {return json({error:'Invalid request'},400);}
@@ -77,7 +83,9 @@ export async function privateAPI(request, env, now) {
     return json({ok:true},200,{'Set-Cookie':sessionCookie('',0)});
   }
   if (path === '/private/overview' && request.method === 'GET') {
-    if (!await session(request,env,now)) return json({error:'Unauthorized'},401);
+    const mode = adminMode(env);
+    const allowed = mode === 'access' ? await accessIdentity(request,env,now) : mode === 'key' && await session(request,env,now);
+    if (!allowed) return json({error:'Unauthorized'},401);
     const month = new Date(now*1000).toISOString().slice(0,7);
     const [usage, latest] = await env.DB.batch([
       env.DB.prepare('SELECT id,label,revoked,online,uplink,downlink,since,at,gaps FROM credential_usage WHERE month=? ORDER BY revoked,label').bind(month),

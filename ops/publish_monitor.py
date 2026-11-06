@@ -33,7 +33,7 @@ def private_key(state, name):
     return key
 
 
-def private_secrets(state):
+def private_secrets(state, deployment):
     path = state/'subscription-key'
     if not path.exists():
         with path.open('x') as file: file.write(base64.b64encode(secrets.token_bytes(32)).decode()+'\n')
@@ -41,9 +41,15 @@ def private_secrets(state):
     if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink!=1 or metadata.st_uid!=os.getuid() or metadata.st_mode & 0o077: raise ValueError('Encryption key must be private')
     key = path.read_text().strip()
     if len(base64.b64decode(key,validate=True)) != 32: raise ValueError('Invalid encryption key')
-    return {'SUBSCRIPTION_KEY':key,
-            'ADMIN_SHA256':hashlib.sha256(private_key(state,'admin-key').encode()).hexdigest(),
-            'PROVISION_SHA256':hashlib.sha256(private_key(state,'provision-key').encode()).hexdigest()}
+    result = {'SUBSCRIPTION_KEY':key,
+              'PROVISION_SHA256':hashlib.sha256(private_key(state,'provision-key').encode()).hexdigest()}
+    if deployment.get('admin_auth') == 'access':
+        result['ACCESS_EMAIL_SHA256'] = ','.join(sorted({hashlib.sha256(email.lower().encode()).hexdigest() for email in deployment['access']['emails']}))
+        # Disable the old secret even if someone later changes the auth-mode variable.
+        result['ADMIN_SHA256'] = 'disabled'
+    else:
+        result['ADMIN_SHA256'] = hashlib.sha256(private_key(state,'admin-key').encode()).hexdigest()
+    return result
 
 
 def main():
@@ -71,7 +77,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="routepilot-edge-") as directory:
         stage = Path(directory)
         (stage / "cloud").mkdir()
-        for name in ("wrangler.json", "worker.mjs", "status-site.json", "public-status.mjs", "status-cache.mjs", "private-api.mjs"):
+        for name in ("wrangler.json", "worker.mjs", "status-site.json", "public-status.mjs", "status-cache.mjs", "private-api.mjs", "access-auth.mjs", "package.json", "package-lock.json"):
             shutil.copyfile(ROOT / "cloud" / name, stage / "cloud" / name)
         shutil.copytree(ROOT / "cloud/migrations", stage / "cloud/migrations")
         (stage/"cloud/wrangler.json").write_text(json.dumps(config))
@@ -82,6 +88,7 @@ def main():
             if result.returncode:
                 raise SystemExit("Wrangler operation failed: "+" ".join(args[:2]))
         if not args.site_only:
+            subprocess.run(['npm','ci','--omit=dev','--ignore-scripts','--prefix',str(stage/'cloud')], check=True)
             token = private_key(state,"report-token").encode()
             digest = hashlib.sha256(token).hexdigest()
             route = hmac.new(token, b"routepilot-report-route-v1", hashlib.sha256).hexdigest()
@@ -89,7 +96,9 @@ def main():
             (stage/"cloud/wrangler.json").write_text(json.dumps(config))
             run("d1","migrations","apply",config["d1_databases"][0]["database_name"],"--remote")
             run("deploy", quiet=True)
-            run("secret","bulk",body=json.dumps({"REPORT_SHA256":digest,**private_secrets(state)}))
+            run("secret","bulk",body=json.dumps({"REPORT_SHA256":digest,**private_secrets(state,deployment)}))
+            if deployment.get('admin_auth') == 'access':
+                run('d1','execute',config['d1_databases'][0]['database_name'],'--remote','--command','DELETE FROM admin_sessions', quiet=True)
         if not args.collector_only:
             dist = stage / "web/dist-status"
             shutil.copytree(ROOT / "web/dist-status", dist)

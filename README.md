@@ -6,7 +6,7 @@
 - **私有订阅**：Clash Verge、Shadowrocket 通过 HTTPS 更新配置；独立随机令牌、加密存储、按凭证撤销。
 - **独立监控**：VPS 每分钟自检上报，Cloudflare 外部探测，D1 保存历史，无需 Mac 常驻。
 - **状态页**：React + TypeScript + Ant Design，支持 PWA、多实例切换、流量余额及 24 小时 / 7 天 / 30 天记录。
-- **管理页**：查看 CPU、内存、磁盘和各凭证月度上下行流量；公开页面不暴露凭证明细。
+- **管理页**：支持 Google 登录，查看主机负载和各凭证月度流量；公开页面不暴露凭证明细。
 
 ```text
 Agent + Skill ── SSH ── VPS ── 固定 IPv4 出口
@@ -22,6 +22,7 @@ VPS 自检 + Cloudflare 探测 ── Worker + D1 ── 缓存 API ── WebUI
 ```sh
 git clone https://github.com/RyanProMax/route-pilot.git
 cd route-pilot
+npm --prefix cloud ci --ignore-scripts
 npm --prefix web ci --include=optional
 ```
 
@@ -38,6 +39,6 @@ node --test tests/*.test.mjs
 npm --prefix web run build:status
 ```
 
-[订阅与管理](docs/subscriptions.md) · [运维](docs/operations.md) · [安全](SECURITY.md) · [验收边界](docs/verification.md)
+[订阅与管理](docs/subscriptions.md) · [Google 登录](docs/admin-login.md) · [运维](docs/operations.md) · [安全](SECURITY.md)
 
 MIT License。内置 Manrope 字体遵循 SIL OFL。

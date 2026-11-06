@@ -36,7 +36,9 @@ Node revocation validates and replaces the Xray configuration, then restarts Xra
 
 ## Admin and accounting
 
-Open `/admin/` on the deployed status hostname and enter the private `admin-key`. The browser uses an eight-hour Secure, HttpOnly, SameSite=Strict cookie; the key is not stored in browser storage. A new login invalidates the previous session; logout invalidates the current one. The page is read-only. The reporting token, admin key and provisioning key have separate permissions.
+Open `/admin/` on the deployed status hostname. [Google login through Cloudflare Access](admin-login.md) restricts management to the configured Google email allowlist and verifies the signed application identity at the Worker. Access mode disables legacy admin keys and sessions. The page is read-only; reporting and provisioning retain separate credentials.
+
+Deployments without Access can use key mode: enter the private `admin-key` for an eight-hour Secure, HttpOnly, SameSite=Strict session. A new key login invalidates the previous session. Neither mode stores credentials in browser storage.
 
 The public page shows CPU usage, memory, disk and one-minute system load. Credential names and traffic are only available through the authenticated management API. Private responses are not cached by CF, the browser or the service worker. Public status keeps its 60-second cache.
 

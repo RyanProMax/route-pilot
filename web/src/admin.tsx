@@ -18,17 +18,29 @@ const size = (bytes:number) => {
 const time = (ts:number) => new Intl.DateTimeFormat('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(ts*1000);
 function Admin() {
   const [data,setData]=useState<Overview|null>(null), [auth,setAuth]=useState<boolean|null>(null);
+  const [mode,setMode]=useState<'key'|'access'|null>(null), [revision,setRevision]=useState(0);
   const [error,setError]=useState(''), [busy,setBusy]=useState(false);
   const [form]=Form.useForm();
   useEffect(()=>{
+    const controller=new AbortController();
+    void fetch('/private/auth',{cache:'no-store',signal:controller.signal}).then(async r=>{
+      if(!r.ok)throw Error();
+      const next=await r.json();
+      if(next.mode!=='key' && next.mode!=='access')throw Error();
+      if(!controller.signal.aborted)setMode(next.mode);
+    }).catch(()=>{if(!controller.signal.aborted)setError('暂时无法读取登录配置');});
+    return ()=>controller.abort();
+  },[]);
+  useEffect(()=>{
+    if(!mode)return;
     let stopped=false, timer:ReturnType<typeof setTimeout>;
     const controller=new AbortController();
     async function load() {
       if(document.hidden) {timer=setTimeout(load,60000); return;}
       try {
-        const r=await fetch('/private/overview',{cache:'no-store',signal:controller.signal});
+        const r=await fetch('/private/overview',{cache:'no-store',redirect:'manual',signal:controller.signal});
         if(stopped)return;
-        if(r.status===401) {setAuth(false);setData(null);return;}
+        if(r.type==='opaqueredirect' || r.status===401 || r.status===403) {setAuth(false);setData(null);setError('');return;}
         if(!r.ok)throw Error();
         const next=await r.json(); if(stopped)return;
         setData(next);setAuth(true);setError('');
@@ -36,21 +48,22 @@ function Admin() {
       if(!stopped)timer=setTimeout(load,60000);
     }
     void load(); return ()=>{stopped=true;clearTimeout(timer);controller.abort();};
-  },[auth]);
+  },[mode,revision]);
   async function login(values:{key:string}) {
     setBusy(true);setError('');
     try {
       const r=await fetch('/private/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(values),cache:'no-store'});
       if(!r.ok)throw Error();
-      form.resetFields();setAuth(true);
+      form.resetFields();setAuth(true);setRevision(value=>value+1);
     }catch{setError('密钥无效或暂时无法登录');}finally{setBusy(false);}
   }
   async function logout() {
+    if(mode==='access') {window.location.assign('/cdn-cgi/access/logout');return;}
     setBusy(true);
     try {
       const r=await fetch('/private/session',{method:'DELETE',cache:'no-store'});
       if(!r.ok)throw Error();
-      setData(null);setAuth(false);
+      setData(null);setAuth(false);setRevision(value=>value+1);
     }catch{setError('退出失败，请重试');}finally{setBusy(false);}
   }
   return <ConfigProvider theme={theme} locale={zhCN}><div className="status-page admin-page">
@@ -59,11 +72,11 @@ function Admin() {
     <main>
       {error && <Alert type="warning" title={error} className="status-alert" showIcon/>}
       {auth===false ? <section className="admin-login"><h1>管理访问</h1>
-        <Form form={form} layout="vertical" onFinish={login} requiredMark={false}>
+        {mode==='access' ? <Button type="primary" size="large" href="/admin/">使用 Google 登录</Button> : <Form form={form} layout="vertical" onFinish={login} requiredMark={false}>
           <Form.Item name="key" label="管理密钥" rules={[{required:true,message:'请输入管理密钥'}]}>
             <Input.Password autoComplete="current-password" size="large"/></Form.Item>
           <Button type="primary" htmlType="submit" loading={busy}>进入</Button>
-        </Form></section> : !data ? <Skeleton active paragraph={{rows:6}}/> : <>
+        </Form>}</section> : !data ? <Skeleton active paragraph={{rows:6}}/> : <>
         <Flex className="section-heading" justify="space-between" align="center"><h2>主机负载</h2><time>{data.reportedAt ? time(data.reportedAt) : '待更新'}</time></Flex>
         <HostMetrics load={data.load}/>
         <section className="admin-usage"><Flex justify="space-between" align="center" className="section-heading"><h2>凭证流量</h2><span>{data.month}</span></Flex>

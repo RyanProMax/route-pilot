@@ -25,6 +25,7 @@ const post=(body,authorization)=>({method:'POST',headers:{'Content-Type':'applic
 
 test('independent encrypted subscriptions, rotation, revocation and tamper rejection',async()=>{
   const {sql,env}=setup();
+  env.ADMIN_AUTH_MODE='access';
   try {
     const management=randomBytes(32).toString('hex');env.PROVISION_SHA256=await digest(management);
     const a=randomBytes(32).toString('base64url'),b=randomBytes(32).toString('base64url');

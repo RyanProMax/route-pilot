@@ -14,7 +14,11 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: |
+            web/package-lock.json
+            cloud/package-lock.json
+      - run: npm --prefix cloud ci --ignore-scripts
+      - run: npm --prefix cloud audit --audit-level=moderate
       - run: python3 -m unittest discover -s tests -v
       - run: python3 skills/fixed-ip-vpn/scripts/test_workflow.py
       - run: node --test tests/*.test.mjs
