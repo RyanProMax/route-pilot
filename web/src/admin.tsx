@@ -33,10 +33,10 @@ import {
   Search,
 } from "lucide-react";
 import zhCN from "antd/locale/zh_CN";
-import { theme } from "./admin-theme";
+import { theme } from "./theme";
 import { AdminOverview } from "./admin-overview";
 import type { HostLoad } from "./load";
-import mark from "./assets/console-mark.svg";
+import mark from "./assets/routepilot-mark.svg";
 import google from "./assets/google-g.png";
 import "./status.css";
 import "./admin.css";

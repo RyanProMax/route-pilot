@@ -9,7 +9,7 @@ const block = (width, height, key) => h('div', {
 export function StatusSkeleton() {
   return h('div', { className: 'status-page page-loading', role: 'status', 'aria-label': '正在加载节点状态', 'aria-busy': true },
     h('header', { className: 'site-header', 'aria-hidden': true },
-      h(Flex, { gap: 10, align: 'center', className: 'skeleton-brand' }, block(40, 40), block(152, 28)),
+      h(Flex, { gap: 10, align: 'center', className: 'skeleton-brand' }, block(30, 30), block(145, 24)),
       block(108, 12)),
     h('main', { 'aria-hidden': true },
       h('div', { className: 'instance-navigation' }, block(136, 44)),

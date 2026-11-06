@@ -6,7 +6,7 @@ export function HostMetrics({load}: {load:HostLoad|null|undefined}) {
       const value = load?.[key];
       return <div className="host-metric" key={key}>
         <div className="host-metric-label"><span>{label}</span><span>{value == null ? '—' : value+'%'}</span></div>
-        <Progress percent={value ?? 0} showInfo={false} strokeColor="#159b76" railColor="#edf0ee" size={['100%',4]} aria-label={label+'使用率'} />
+        <Progress percent={value ?? 0} showInfo={false} strokeColor="#159b76" railColor="#e9edf3" size={['100%',4]} aria-label={label+'使用率'} />
       </div>;
     })}
     <div className="host-metric"><div className="host-metric-label"><span>系统负载</span><span>{load?.load1?.toFixed(2) ?? '—'}</span></div></div>

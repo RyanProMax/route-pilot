@@ -3,6 +3,7 @@ import { RefreshCw, Server } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { TableColumnsType } from 'antd';
 import { readStatus } from './data';
+import { remainingTraffic } from './traffic';
 import type { Item, Range, State, StatusBundle, Summary } from './data';
 import { HostMetrics } from './load';
 import type { HostLoad } from './load';
@@ -68,10 +69,7 @@ export function AdminOverview({ node, revision, refresh }: { node: Node; revisio
   const fresh = online && !!node.reportedAt && now - node.reportedAt <= 150;
   const expired = !data || now - data.at > 150;
   const currentState = (item?: Item): State => !item || !online || error || expired || !item.at || now - item.at > 150 ? 'unknown' : item.status;
-  const traffic = online && !error && !expired && data?.lastReport && now - data.lastReport <= 150 &&
-    data.traffic?.month === new Date(now * 1000).toISOString().slice(0, 7) ? data.traffic : null;
-  const used = traffic ? Math.max(0, traffic.planGB - traffic.remainingGB) : null;
-  const percent = traffic && traffic.planGB > 0 ? Math.max(0, Math.min(100, used! / traffic.planGB * 100)) : 0;
+  const traffic = remainingTraffic(data?.traffic, Boolean(online && !error && !expired && data?.lastReport && now - data.lastReport <= 150), now);
   const connection = data?.checks.find(item => item.id === 'connections');
   const columns: TableColumnsType<Item> = [
     { title: '检查项目', key: 'name', width: 152, className: 'check-name', render: (_, item) => <span className="check-label"><Badge color={states[currentState(item)].color} /><span>{labels[item.id]}</span></span> },
@@ -118,10 +116,10 @@ export function AdminOverview({ node, revision, refresh }: { node: Node; revisio
     </section>
     <section className="resource-strip" aria-label="节点资源">
       <HostMetrics load={fresh ? node.load : null} />
-      <div className="monthly-traffic"><div className="resource-label">月流量 <span>{traffic?.month ?? '待更新'}</span></div>
-        <div className="resource-value">{used === null ? '—' : used.toLocaleString('zh-CN')}<small>{traffic ? ' / ' + traffic.planGB.toLocaleString('zh-CN') + ' GB' : ''}</small></div>
-        <Progress percent={percent} showInfo={false} strokeColor={percent > 90 ? states.down.color : states.ok.color} railColor="#e9edf3" size={['100%', 5]} aria-label="本月已用流量百分比" />
-        <span className="traffic-remaining">{traffic ? '剩余约 ' + traffic.remainingGB.toLocaleString('zh-CN') + ' GB' : '暂无流量数据'}</span>
+      <div className="monthly-traffic"><div className="resource-label">剩余流量 <span>{traffic ? 'UTC ' + traffic.month : '待更新'}</span></div>
+        <div className="resource-value">{traffic ? <><span className="resource-estimate">约 </span>{traffic.remainingGB.toLocaleString('zh-CN')}</> : '—'}<small>{traffic ? ' / ' + traffic.planGB.toLocaleString('zh-CN') + ' GB' : ''}</small></div>
+        <Progress percent={traffic?.percent ?? 0} showInfo={false} strokeColor={states[traffic?.level ?? 'ok'].color} railColor="#e9edf3" size={['100%', 5]} aria-label="本月剩余流量百分比" />
+        <span className="traffic-remaining">{traffic ? Number(traffic.percent.toFixed(1)) + '% · 按出站流量估算' : '暂无流量数据'}</span>
       </div>
     </section>
     {data && <div className="history-updated">历史更新于 {displayTime(data.at)}</div>}

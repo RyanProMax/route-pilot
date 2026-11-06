@@ -1,40 +1,15 @@
-import type { ThemeConfig } from "antd";
+import type { ThemeConfig } from 'antd';
 export const theme: ThemeConfig = {
   token: {
-    colorPrimary: "#244b3f",
-    colorText: "#22392f",
-    colorTextSecondary: "#627168",
-    colorBorderSecondary: "#e9edea",
-    colorBgLayout: "#ffffff",
-    borderRadius: 8,
+    colorPrimary: '#6476ae', colorText: '#1c2638', colorTextSecondary: '#65718a',
+    colorBorder: '#dce2ec', colorBorderSecondary: '#e9edf4', colorBgLayout: '#fafbfd',
+    colorBgContainer: '#ffffff', borderRadius: 8, fontSize: 14,
     fontFamily: 'Manrope, "PingFang SC", "Microsoft YaHei", sans-serif',
-    fontSize: 14,
   },
   components: {
-    Table: {
-      headerBg: "#ffffff",
-      headerColor: "#627168",
-      headerSplitColor: "transparent",
-      cellPaddingBlock: 21,
-      cellPaddingInline: 16,
-      rowHoverBg: "#ffffff",
-    },
-    Segmented: {
-      trackBg: "#f2f4f3",
-      itemSelectedBg: "#ffffff",
-      itemSelectedColor: "#22392f",
-      itemHoverBg: "transparent",
-      itemActiveBg: "transparent",
-      boxShadowTertiary: "none",
-    },
-    Tooltip: { colorBgSpotlight: "#ffffff", colorTextLightSolid: "#22392f" },
-    Radio: {
-      buttonBg: "#f2f5f3",
-      buttonColor: "#53665b",
-      buttonSolidCheckedBg: "#244b3f",
-      buttonSolidCheckedHoverBg: "#305e50",
-      buttonSolidCheckedActiveBg: "#1d3d33",
-      buttonSolidCheckedColor: "#ffffff",
-    },
+    Table: { headerBg: 'transparent', headerColor: '#65718a', headerSplitColor: 'transparent', cellPaddingBlock: 20, cellPaddingInline: 16, rowHoverBg: '#f7f9fc' },
+    Segmented: { trackBg: '#f0f3f8', itemSelectedBg: '#6476ae', itemSelectedColor: '#fff', itemHoverBg: '#e6ebf4', boxShadowTertiary: 'none' },
+    Tooltip: { colorBgSpotlight: '#fff', colorTextLightSolid: '#1c2638' },
+    Radio: { buttonBg: '#f0f3f8', buttonColor: '#526079', buttonSolidCheckedBg: '#6476ae', buttonSolidCheckedHoverBg: '#56689d', buttonSolidCheckedActiveBg: '#4a5c90', buttonSolidCheckedColor: '#fff' },
   },
 };

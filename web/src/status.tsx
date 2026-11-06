@@ -9,6 +9,7 @@ import type { TableColumnsType } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { Globe2 } from 'lucide-react';
 import { readInstances, readStatus } from './data';
+import { remainingTraffic } from './traffic';
 import type { InitialData, Item, Range, State, StatusBundle } from './data';
 import { StatusSkeleton } from './loading.mjs';
 import { HostMetrics } from './load';
@@ -128,11 +129,9 @@ function StatusPage({ initial }: { initial: InitialData }) {
   const expired = !data || now - data.at > 150;
   const currentState = (item: Item): State =>
     !online || expired || error || !item.at || now - item.at > 150 ? 'unknown' : item.status;
-  const traffic = online && !error && data?.lastReport && now - data.lastReport <= 150 &&
-    data.traffic?.month === new Date(now * 1000).toISOString().slice(0, 7) ? data.traffic : null;
-  const remaining = traffic ? Math.min(100, Math.max(0, traffic.remainingGB / traffic.planGB * 100)) : null;
-  const quotaColor = remaining !== null && remaining < 10 ? states.down.color
-    : remaining !== null && remaining < 25 ? states.degraded.color : states.ok.color;
+  const traffic = remainingTraffic(data?.traffic, Boolean(online && !error && !expired && data?.lastReport && now - data.lastReport <= 150), now);
+  const remaining = traffic?.percent ?? null;
+  const quotaColor = states[traffic?.level ?? 'ok'].color;
 
   const columns: TableColumnsType<Item> = [
     {
@@ -232,7 +231,7 @@ function StatusPage({ initial }: { initial: InitialData }) {
                 className="quota-progress"
                 percent={remaining ?? 0}
                 strokeColor={quotaColor}
-                railColor="#edf0ee"
+                railColor="#e9edf3"
                 size={['100%', 8]}
                 showInfo={false}
                 aria-label="本月剩余流量百分比"
@@ -241,12 +240,12 @@ function StatusPage({ initial }: { initial: InitialData }) {
             <Flex vertical align="flex-end" gap={4} className="traffic-summary">
               <span className="quota-percentage">{remaining === null ? '—' : Number(remaining.toFixed(1)) + '%'}</span>
               <span className="traffic-amount">
-                {traffic ? <>{number(traffic.remainingGB)} <span>/ {number(traffic.planGB)} GB</span></> : '待更新'}
+                {traffic ? <>约 {number(traffic.remainingGB)} <span>/ {number(traffic.planGB)} GB</span></> : '待更新'}
               </span>
             </Flex>
           </section>
 
-          <HostMetrics load={expired ? null : data?.load} />
+          <HostMetrics load={!online || error || expired ? null : data?.load} />
           <section aria-labelledby="history-title" className="history-section">
             <Flex justify="space-between" align="center" gap={16} className="section-heading">
               <h2 id="history-title">稳定性记录</h2>

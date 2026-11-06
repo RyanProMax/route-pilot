@@ -14,7 +14,7 @@ export const states = {
   ok: { label: '健康', color: '#159b76' },
   degraded: { label: '缓慢', color: '#bd9425' },
   down: { label: '异常', color: '#d3635b' },
-  unknown: { label: '无数据', color: '#e0e5e3' },
+  unknown: { label: '无数据', color: '#e1e6ed' },
 } as const;
 export const windows = { '24h': '24 小时', '7d': '7 天', '30d': '30 天' };
 const tooltipTrigger: ('hover' | 'focus' | 'click')[] =

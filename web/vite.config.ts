@@ -35,7 +35,7 @@ export default defineConfig({
       id: '/', name: 'route-pilot', short_name: 'route-pilot', lang: 'zh-CN',
       description: '节点服务状态与稳定性记录',
       start_url: '/', scope: '/', display: 'standalone',
-      theme_color: '#ffffff', background_color: '#ffffff',
+      theme_color: '#ffffff', background_color: '#fafbfd',
       icons: [
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
