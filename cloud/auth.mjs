@@ -107,7 +107,8 @@ export async function authAPI(request,env,now,{fetchToken=fetch,resolveKey=googl
     const code=url.searchParams.get('code');if(!code || code.length>4096)return finish('failed');
     let identity;
     try{
-      const response=await fetchToken('https://oauth2.googleapis.com/token',{method:'POST',redirect:'error',signal:AbortSignal.timeout(10000),
+      // Workers supports manual/follow only. Reject non-2xx below without forwarding credentials to redirects.
+      const response=await fetchToken('https://oauth2.googleapis.com/token',{method:'POST',redirect:'manual',signal:AbortSignal.timeout(10000),
         headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:env.GOOGLE_CLIENT_ID,
           client_secret:env.GOOGLE_CLIENT_SECRET,redirect_uri:env.APP_ORIGIN+'/private/auth/google/callback',
           grant_type:'authorization_code',code,code_verifier:binding})});

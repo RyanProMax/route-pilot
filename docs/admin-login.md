@@ -26,9 +26,11 @@ python3 ops/configure_google.py --config /private/routepilot/deploy.json \
 
 脚本核对 Web 客户端类型及精确回调地址，使用原有 Wrangler 发布权限，把 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET` 写入 Worker Secrets，不打印其值。两项统一使用 Secret，后续发布代码不会清除它们。无需新的 CF API Token。
 
-也可直接在 **CF → Workers & Pages → 后端 Worker → Settings → Variables and Secrets** 添加这两个同名 **Secret** 并部署。不要填到静态页面 Worker。
+也可直接在 **CF → Workers & Pages → routepilot-server → Settings → Variables and Secrets** 添加这两个同名 **Secret** 并部署。不要填到 `routepilot-web`；自定义服务名时使用 `server_worker` 对应的 Worker。
 
 `APP_ORIGIN` 由部署脚本按状态域名生成；回调地址由后端固定计算，不接受客户端自定义返回地址。
+
+发布会保留控制台添加的变量；Client ID 若已有普通变量配置也可正常使用，Client Secret 必须使用 Secret。令牌交换在 Workers 中使用 `redirect: manual` 并拒绝重定向，测试需覆盖真实 Workers 运行时。
 
 ## RP 账号策略
 

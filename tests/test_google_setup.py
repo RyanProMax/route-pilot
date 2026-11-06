@@ -57,6 +57,11 @@ class GoogleSetupTests(unittest.TestCase):
     def test_deployment_keeps_account_email_and_google_secrets_out_of_worker_vars(self):
         c=json.loads((Path(__file__).resolve().parents[1]/'examples/deploy.example.json').read_text())
         worker,_=cloud_configs(c)
+        self.assertEqual(worker['name'],'routepilot-server')
+        self.assertEqual(cloud_configs(c)[1]['name'],'routepilot-web')
+        custom={**c,'server_worker':'another-server','web_worker':'another-web'}
+        self.assertEqual(cloud_configs(custom)[0]['name'],'another-server')
+        self.assertEqual(cloud_configs(custom)[1]['name'],'another-web')
         self.assertEqual(worker['vars']['APP_ORIGIN'],'https://status.example.com')
         self.assertNotIn(c['bootstrap_admin_email'],json.dumps(worker))
         self.assertNotIn('GOOGLE_CLIENT_SECRET',worker['vars'])

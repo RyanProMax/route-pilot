@@ -30,6 +30,8 @@ A credential may intentionally be shared across devices and native client format
 
 Production identifiers are generated into temporary deployment staging directories. `cloud/wrangler.json` and `cloud/status-site.json` are reusable templates. The public instance manifest is replaced from the private deployment settings during publication.
 
+Cloudflare runs two Workers: `routepilot-web` serves the status/admin pages and PWA assets; `routepilot-server` handles reporting, status APIs, subscriptions and Google authentication. Their names do not depend on the node location. Set `server_worker` and `web_worker` in private settings for separate installations in the same account. Renaming a live Worker must preserve its immutable Worker ID, secrets, D1 bindings, routes and schedules; do not deploy an empty replacement with a new name.
+
 ## Measurements
 
 - **Heartbeat:** receipt of the VPS report; missing after 150 seconds is unknown.

@@ -8,7 +8,7 @@ import shutil
 import stat
 import subprocess
 import tempfile
-from deployment import load_config
+from deployment import load_config, cloud_configs
 
 
 def read_credentials(path,origin):
@@ -40,7 +40,8 @@ def main():
     os.umask(0o077)
     with tempfile.TemporaryDirectory(prefix='route-pilot-google-') as directory:
         stage=Path(directory)
-        (stage/'wrangler.json').write_text(json.dumps({'name':'routepilot-'+c['instance']['id'],'account_id':c['account_id']}))
+        worker,_=cloud_configs(c)
+        (stage/'wrangler.json').write_text(json.dumps({'name':worker['name'],'account_id':c['account_id']}))
         result=subprocess.run([binary,'secret','bulk','--config','wrangler.json'],input=json.dumps(values),
                               cwd=stage,capture_output=True,text=True,env={**os.environ,'WRANGLER_SEND_METRICS':'false'})
         if result.returncode:raise SystemExit('OAuth secret deployment failed; credentials withheld')

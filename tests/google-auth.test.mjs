@@ -21,7 +21,7 @@ async function token(env,flow,changes={},key=privateKey){return new SignJWT({iss
   .setProtectedHeader({alg:'RS256',kid:'test'}).sign(key);}
 const callback=(flow,options={})=>req('/private/auth/google/callback?code=code-1&state='+flow.state,{headers:{cookie:flow.flow},...options});
 function exchange(env,flow,signed){return async(url,options)=>{
-  assert.equal(url,'https://oauth2.googleapis.com/token');assert.equal(options.redirect,'error');assert.equal(options.method,'POST');
+  assert.equal(url,'https://oauth2.googleapis.com/token');assert.equal(options.redirect,'manual');assert.equal(options.method,'POST');
   assert.equal(options.body.get('client_secret'),env.GOOGLE_CLIENT_SECRET);assert.equal(options.body.get('code'),'code-1');
   const proof=createHash('sha256').update(options.body.get('code_verifier')).digest('base64url');
   assert.equal(proof,flow.url.searchParams.get('code_challenge'));

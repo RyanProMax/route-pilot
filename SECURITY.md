@@ -43,6 +43,8 @@ References: [systemd execution and credentials](https://www.freedesktop.org/soft
 
 ## Build dependencies
 
+OAuth regression tests run in Miniflare/workerd. Its development-only `undici` and `sharp` dependencies are pinned to patched releases; these packages are omitted from the deployed Worker.
+
 Workbox's build-time `glob` dependency is pinned to 14.0.3 to address its traversal and transitive pattern-matching advisories. Verify the generated service worker when changing this override.
 
 The build-only Rollup resolver still depends on `deepmerge` 4.3.1, whose [prototype-poisoning advisory](https://github.com/advisories/GHSA-gcqx-w48m-w2h4) has no patched upstream release as of 2026-11-05. It processes repository-controlled build options, not public API input, and is not shipped as a runtime dependency. Do not build untrusted configurations. Track an upstream fix; do not force-downgrade the PWA plugin merely to suppress the audit report.

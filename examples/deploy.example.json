@@ -2,6 +2,8 @@
   "account_id": "YOUR_CLOUDFLARE_ACCOUNT_ID",
   "zone": "example.com",
   "status_hostname": "status.example.com",
+  "server_worker": "routepilot-server",
+  "web_worker": "routepilot-web",
   "bootstrap_admin_email": "admin@example.com",
   "ssh_host": "my-vps",
   "instance": {

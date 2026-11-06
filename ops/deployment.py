@@ -31,6 +31,9 @@ def load_config(path=None):
     if type(i['bandwidth_gb']) is not int or i['bandwidth_gb'] <= 0: raise ValueError('Invalid traffic allowance')
     uuid.UUID(c['database']['id'])
     if not re.fullmatch(r'[a-z0-9-]+', c['database']['name']): raise ValueError('Invalid database name')
+    for key in ('server_worker','web_worker'):
+        if key in c and not re.fullmatch(r'[a-z][a-z0-9-]{0,62}',c[key]):
+            raise ValueError('Invalid Worker name')
     if c.get('bootstrap_admin_email'):
         if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', c['bootstrap_admin_email']) or len(c['bootstrap_admin_email'])>254:
             raise ValueError('Invalid bootstrap administrator email')
@@ -40,7 +43,7 @@ def cloud_configs(c):
     worker = json.loads((ROOT/'cloud/wrangler.json').read_text())
     site = json.loads((ROOT/'cloud/status-site.json').read_text())
     i = c['instance']; host = c['status_hostname']; zone = c['zone']
-    worker.update(name='routepilot-'+i['id'], account_id=c['account_id'])
+    worker.update(name=c.get('server_worker','routepilot-server'), account_id=c['account_id'])
     worker['routes'] = [{'pattern':host,'custom_domain':True}] + [
         {'pattern':host+'/status/'+prefix+window+'.json','zone_name':zone}
         for prefix in ('', i['id']+'/') for window in ('24h','7d','30d')]
@@ -50,5 +53,5 @@ def cloud_configs(c):
         'database_id':c['database']['id'],'migrations_dir':'migrations'}]
     worker['vars'] = {'INSTANCE_ID':i['id'],'IPV4':i['ipv4'],'IPV6':i.get('ipv6',''),
         'PORT':str(i['port']),'PLAN_BANDWIDTH_GB':str(i['bandwidth_gb']), 'APP_ORIGIN':'https://'+host}
-    site.update(account_id=c['account_id'],routes=[{'pattern':host+'/*','zone_name':zone}])
+    site.update(name=c.get('web_worker','routepilot-web'),account_id=c['account_id'],routes=[{'pattern':host+'/*','zone_name':zone}])
     return worker, site
