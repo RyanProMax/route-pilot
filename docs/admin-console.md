@@ -7,6 +7,16 @@ One React/TypeScript/Ant Design project serves two entries:
 
 Accounts, role checks and sessions belong to the RP server. This release has no ordinary-user page or public registration.
 
+## Console layout
+
+The console uses a top navigation bar for overview and credential management, with the account menu on the right. Operation history remains available under the credential management tabs and at `/admin/?view=activity`.
+
+The overview reads all history windows from the same public status API as the home page; changing the time range does not issue another request. Status cells share the home page renderer and responsive sizing: 72 samples, 3px gaps and 26px height on desktop; 2px gaps and 24px height at widths up to 820px. Hover, keyboard focus and touch expose the sample period and result. The time axis uses API timestamps.
+
+Connection history reports **peak bands**, not exact historical counts; the current connection count comes from the private console. Entry latency is the latest TCP connection time, not an average. Host metrics show the reported percentages and one-minute load; hardware capacity is not available in this API. Monthly traffic is the public NIC estimate, separate from per-credential payload accounting. Missing or stale values remain unavailable.
+
+The console has a separate cool-white/blue-gray theme and an abstract R mark. The public home page retains its existing visual system.
+
 ## Enable
 
 After deploying migrations/server, configuring Google login and installing device helpers:

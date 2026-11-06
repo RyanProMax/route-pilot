@@ -12,39 +12,32 @@ import {
   Form,
   Input,
   Layout,
-  Menu,
-  Progress,
   Select,
   Skeleton,
   Table,
+  Tabs,
   Tag,
   Tooltip,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
-  Activity,
-  ArrowUpRight,
   Check,
-  ChevronRight,
+  ChevronDown,
+  UserRound,
   Copy,
   Ellipsis,
-  ExternalLink,
   KeyRound,
-  LayoutDashboard,
   LogOut,
-  Menu as MenuIcon,
   Plus,
   Search,
-  Server,
-  ShieldCheck,
 } from "lucide-react";
 import zhCN from "antd/locale/zh_CN";
-import { theme } from "./theme";
-import { HostMetrics } from "./load";
+import { theme } from "./admin-theme";
+import { AdminOverview } from "./admin-overview";
 import type { HostLoad } from "./load";
-import mark from "./assets/routepilot-mark.svg";
-import japan from "./assets/jp.svg";
+import mark from "./assets/console-mark.svg";
+import google from "./assets/google-g.png";
 import "./status.css";
 import "./admin.css";
 
@@ -171,7 +164,6 @@ function Admin() {
     [auth, setAuth] = useState<boolean | null>(null),
     [ready, setReady] = useState<boolean | null>(null);
   const [page, setPage] = useState<Page>(pageFromURL),
-    [menuOpen, setMenuOpen] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const [search, setSearch] = useState(""),
@@ -337,7 +329,6 @@ function Admin() {
   }
   function navigate(value: Page) {
     setPage(value);
-    setMenuOpen(false);
     history.pushState(
       null,
       "",
@@ -471,37 +462,6 @@ function Admin() {
         (filter === "active" && !r.revoked) ||
         (filter === "revoked" && r.revoked)),
   );
-  const menuItems = [
-    { key: "overview", icon: <LayoutDashboard size={18} />, label: "运行概览" },
-    { key: "credentials", icon: <KeyRound size={18} />, label: "凭证管理" },
-    { key: "activity", icon: <Activity size={18} />, label: "操作记录" },
-  ];
-  const navigation = (
-    <>
-      <Brand />
-      <div className="console-nav-label">工作空间</div>
-      <Menu
-        mode="inline"
-        selectedKeys={[page]}
-        items={menuItems}
-        onClick={(x) => navigate(x.key as Page)}
-      />
-      <a
-        className="console-public-link"
-        href="/"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <ExternalLink size={16} />
-        公开状态页
-        <ArrowUpRight size={15} />
-      </a>
-      <div className="console-sidebar-note">
-        <span className="tiny-dot" />
-        管理员工作空间
-      </div>
-    </>
-  );
   const columns = [
     {
       title: "凭证",
@@ -609,149 +569,58 @@ function Admin() {
       <div className="login-page">
         <header>
           <Brand />
-          <a href="/">
-            查看公开状态
-            <ArrowUpRight size={16} />
-          </a>
+          <a href="/">首页</a>
         </header>
         <main className="login-main">
-          <section className="login-context">
-            <span className="eyebrow">ROUTE-PILOT CONSOLE</span>
-            <h1>
-              节点、凭证与用量。
-              <br />
-              <span>在一处管理。</span>
-            </h1>
-            <div className="login-map" aria-hidden="true">
-              <div className="map-source">
-                <KeyRound size={23} />
-              </div>
-              <div className="map-path">
-                <span />
-                <span />
-                <span />
-              </div>
-              <div className="map-node">
-                <img src={mark} width={32} alt="" />
-              </div>
-              <div className="map-path">
-                <span />
-                <span />
-                <span />
-              </div>
-              <div className="map-target">
-                <Server size={23} />
-              </div>
-            </div>
-            <div className="login-capabilities">
-              <span>
-                <Activity size={16} />
-                运行状态
-              </span>
-              <span>
-                <KeyRound size={16} />
-                访问凭证
-              </span>
-              <span>
-                <ArrowUpRight size={16} />
-                流量用量
-              </span>
-            </div>
-          </section>
-          <section className="login-panel">
-            <span className="login-symbol">
-              <ShieldCheck size={24} />
-            </span>
-            <h2>登录控制台</h2>
-            <p>使用已授权的 Google 账号继续。</p>
-            {(error || loginError) && (
-              <Alert type="warning" title={error || loginError} showIcon />
-            )}
-            {ready === false ? (
-              <Alert type="info" title="Google 登录尚未配置" showIcon />
-            ) : (
-              <Button
-                type="primary"
-                block
-                size="large"
-                loading={busy || ready === null}
-                disabled={ready !== true}
-                onClick={login}
-              >
+          <section className="login-panel" aria-label="管理员登录">
+            <div className="login-identity"><Brand /></div>
+            {(error || loginError) && <Alert type="warning" title={error || loginError} showIcon />}
+            {ready === false ? <Alert type="info" title="Google 登录尚未配置" showIcon /> : (
+              <Button block size="large" loading={busy || ready === null} disabled={ready !== true} onClick={login}>
+                <img src={google} width={24} height={24} alt="" />
                 使用 Google 登录
-                <ArrowUpRight size={17} />
               </Button>
             )}
-            <div className="login-footnote">
-              仅限管理员 · 公开状态页无需登录
-            </div>
           </section>
         </main>
-        <footer>
-          <span>route-pilot</span>
-        </footer>
       </div>
     );
   return (
     <Layout className="console-layout">
-      <Layout.Sider className="console-sidebar" width={224} theme="light">
-        {navigation}
-      </Layout.Sider>
-      <Drawer
-        className="console-mobile-menu"
-        placement="left"
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        width={260}
-        title="工作空间"
-      >
-        {navigation}
-      </Drawer>
       <Layout className="console-body">
         <header className="console-header">
-          <Flex align="center" gap={12}>
-            <Button
-              className="mobile-nav-toggle"
-              type="text"
-              aria-label="打开导航"
-              icon={<MenuIcon size={20} />}
-              onClick={() => setMenuOpen(true)}
-            />
-            <span className="header-workspace">工作空间</span>
-            <ChevronRight size={14} />
-            <span>{titles[page]}</span>
-          </Flex>
+          <Brand />
+          <nav className="console-navigation" aria-label="管理导航">
+            {([['overview', '运行概览'], ['credentials', '凭证管理']] as const).map(([key, label]) =>
+              <Button key={key} type="text" aria-current={(page === key || (key === 'credentials' && page === 'activity')) ? 'page' : undefined}
+                className={(page === key || (key === 'credentials' && page === 'activity')) ? 'is-active' : ''} onClick={() => navigate(key)}>{label}</Button>)}
+          </nav>
           <Dropdown
             trigger={["click"]}
             menu={{
               items: [
+                { key: "account", label: data?.account.email, disabled: true },
                 {
                   key: "logout",
                   icon: <LogOut size={15} />,
                   label: "退出登录",
                 },
               ],
-              onClick: () => void logout(),
+              onClick: ({ key }) => { if (key === "logout") void logout(); },
             }}
           >
-            <Button type="text" className="account-button" loading={busy}>
+            <Button type="text" className="account-button" aria-label="用户菜单" loading={busy}>
               <Avatar size={28} className="account-avatar">
-                {data?.account.email.slice(0, 1).toUpperCase() ?? "A"}
+                <UserRound size={18} />
               </Avatar>
-              <span>{data?.account.email ?? "管理员"}</span>
+              <span className="account-label">管理员</span>
+              <ChevronDown size={16} />
             </Button>
           </Dropdown>
         </header>
         <main className="console-main">
           <div className="console-page-heading">
             <div>
-              <span className="eyebrow">
-                {page === "overview"
-                  ? "OVERVIEW"
-                  : page === "credentials"
-                    ? "CREDENTIALS"
-                    : "ACTIVITY"}
-              </span>
               <h1>{titles[page]}</h1>
             </div>
             {page === "credentials" ? (
@@ -766,6 +635,7 @@ function Admin() {
             ) : (
               <span className="last-updated">
                 更新于 {time(data?.reportedAt ?? null)}
+                {page === "overview" && <Badge color={controlFresh ? "#159b76" : "#bd9425"} text={controlFresh ? "管理任务在线" : "管理任务待连接"} />}
               </span>
             )}
           </div>
@@ -784,202 +654,10 @@ function Admin() {
             </div>
           ) : (
             <>
-              {page === "overview" && (
-                <>
-                  <div className="summary-grid">
-                    <article>
-                      <span>
-                        <Server size={17} />
-                        节点状态
-                      </span>
-                      <strong
-                        className={data.serviceHealthy ? "healthy-text" : ""}
-                      >
-                        {data.serviceHealthy
-                          ? "健康"
-                          : fresh
-                            ? "异常"
-                            : "待更新"}
-                        <i
-                          className={
-                            "health-dot " +
-                            (data.serviceHealthy ? "is-healthy" : "")
-                          }
-                        />
-                      </strong>
-                      <small>{data.instance.name}</small>
-                    </article>
-                    <article>
-                      <span>
-                        <KeyRound size={17} />
-                        有效凭证
-                      </span>
-                      <strong>
-                        {
-                          data.credentials.filter(
-                            (r) =>
-                              !r.revoked &&
-                              r.has_subscription &&
-                              !r.download_revoked,
-                          ).length
-                        }
-                        <em>个</em>
-                      </strong>
-                      <small>
-                        {
-                          data.credentials.filter(
-                            (r) => r.online && !r.revoked && fresh,
-                          ).length
-                        }{" "}
-                        个在线
-                      </small>
-                    </article>
-                    <article>
-                      <span>
-                        <ArrowUpRight size={17} />
-                        本月流量
-                      </span>
-                      <strong>
-                        {bytes(
-                          data.credentials.reduce(
-                            (n, r) => n + (r.uplink ?? 0) + (r.downlink ?? 0),
-                            0,
-                          ),
-                        )}
-                      </strong>
-                      <small>{data.month}</small>
-                    </article>
-                    <article>
-                      <span>
-                        <Activity size={17} />
-                        当前连接
-                      </span>
-                      <strong>
-                        {fresh ? (data.connections ?? "—") : "—"}
-                        <em>条</em>
-                      </strong>
-                      <small>节点 TCP 连接</small>
-                    </article>
-                  </div>
-                  <section className="console-panel node-panel">
-                    <div className="panel-heading">
-                      <h2>节点资源</h2>
-                      <Badge
-                        color={controlFresh ? "#159b76" : "#bd9425"}
-                        text={controlFresh ? "管理任务在线" : "管理任务待连接"}
-                      />
-                    </div>
-                    <div className="node-identity">
-                      <span className="node-icon">
-                        {data.instance.country === "JP" ? (
-                          <img src={japan} width={25} alt="日本" />
-                        ) : (
-                          <Server size={24} />
-                        )}
-                      </span>
-                      <div>
-                        <h3>{data.instance.name}</h3>
-                        <span>{data.instance.id}</span>
-                      </div>
-                      <Tag>固定出口</Tag>
-                    </div>
-                    <HostMetrics load={fresh ? data.load : null} />
-                  </section>
-                  <div className="overview-bottom">
-                    <section className="console-panel">
-                      <div className="panel-heading">
-                        <h2>凭证用量</h2>
-                        <Button
-                          type="link"
-                          onClick={() => navigate("credentials")}
-                        >
-                          查看全部
-                          <ChevronRight size={14} />
-                        </Button>
-                      </div>
-                      {data.credentials.length ? (
-                        <div className="usage-list">
-                          {[...data.credentials]
-                            .sort(
-                              (a, b) =>
-                                (b.uplink ?? 0) +
-                                (b.downlink ?? 0) -
-                                (a.uplink ?? 0) -
-                                (a.downlink ?? 0),
-                            )
-                            .slice(0, 5)
-                            .map((r) => {
-                              const total = data.credentials.reduce(
-                                  (n, x) =>
-                                    n + (x.uplink ?? 0) + (x.downlink ?? 0),
-                                  0,
-                                ),
-                                value = (r.uplink ?? 0) + (r.downlink ?? 0);
-                              return (
-                                <div key={r.id}>
-                                  <Flex justify="space-between">
-                                    <span>{r.label}</span>
-                                    <strong>{bytes(value)}</strong>
-                                  </Flex>
-                                  <Progress
-                                    percent={total ? (value / total) * 100 : 0}
-                                    showInfo={false}
-                                    strokeColor="#3f7b65"
-                                    size={["100%", 5]}
-                                  />
-                                </div>
-                              );
-                            })}
-                        </div>
-                      ) : (
-                        <Empty
-                          image={Empty.PRESENTED_IMAGE_SIMPLE}
-                          description="还没有凭证"
-                        >
-                          <Button onClick={() => navigate("credentials")}>
-                            创建首个凭证
-                          </Button>
-                        </Empty>
-                      )}
-                    </section>
-                    <section className="console-panel">
-                      <div className="panel-heading">
-                        <h2>最近操作</h2>
-                        <Button
-                          type="link"
-                          onClick={() => navigate("activity")}
-                        >
-                          全部记录
-                          <ChevronRight size={14} />
-                        </Button>
-                      </div>
-                      {data.events.length ? (
-                        <div className="recent-events">
-                          {data.events.slice(0, 5).map((e, i) => (
-                            <div key={i}>
-                              <span className={"event-dot " + e.outcome} />
-                              <div>
-                                <strong>{actionNames[e.action]}</strong>
-                                <small>
-                                  {data.credentials.find(
-                                    (c) => c.id === e.device_id,
-                                  )?.label ?? "凭证"}
-                                </small>
-                              </div>
-                              <time>{time(e.at)}</time>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <Empty
-                          image={Empty.PRESENTED_IMAGE_SIMPLE}
-                          description="暂无操作记录"
-                        />
-                      )}
-                    </section>
-                  </div>
-                </>
-              )}
+              {page === "overview" && <AdminOverview node={data} revision={revision} refresh={() => setRevision(x => x + 1)} />}
+              {page !== "overview" && <Tabs className="credential-tabs" activeKey={page} onChange={key => navigate(key as Page)} items={[
+                { key: "credentials", label: "全部凭证" }, { key: "activity", label: "操作记录" },
+              ]} />}
               {page === "credentials" && (
                 <section className="console-panel credentials-panel">
                   {!controlFresh && (
@@ -1120,8 +798,7 @@ function Admin() {
         <footer className="console-footer">
           <span>route-pilot</span>
           <a href="/">
-            公开状态页
-            <ArrowUpRight size={13} />
+            首页
           </a>
         </footer>
       </Layout>
@@ -1129,7 +806,7 @@ function Admin() {
         title={editing ? "修改凭证名称" : "创建凭证"}
         open={formOpen}
         onClose={() => !saving && setFormOpen(false)}
-        width={440}
+        size={440}
         destroyOnHidden
         footer={
           <Flex justify="flex-end" gap={10}>
@@ -1191,7 +868,7 @@ function Admin() {
         title="订阅地址"
         open={!!access}
         onClose={() => setAccess(null)}
-        width={520}
+        size={520}
         destroyOnHidden
       >
         {access && (
