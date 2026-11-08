@@ -4,7 +4,9 @@
 
 [在线示例](https://vps.trendbeak.com/) · [部署指南](docs/deployment.md) · [Google 登录配置](docs/admin-login.md)
 
-[![Route Pilot 墨白界面：多节点状态、资源与流量指标、稳定性历史](docs/images/route-pilot-preview.jpg)](https://vps.trendbeak.com/)
+| 公开状态 | 管理员凭证管理 |
+| :---: | :---: |
+| [![Route Pilot 公开状态：多节点状态、资源与流量指标、稳定性历史](docs/images/route-pilot-preview.jpg)](docs/images/route-pilot-preview.jpg) | [![Route Pilot 凭证管理：示例凭证、在线状态、月度用量与订阅操作](docs/images/route-pilot-credentials.jpg)](docs/images/route-pilot-credentials.jpg) |
 
 示例站公开展示脱敏节点状态；管理功能仅向已授权的 Google 管理员开放。宣传图使用示例数据。
 
