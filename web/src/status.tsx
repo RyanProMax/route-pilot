@@ -1,26 +1,26 @@
 import {
-  Alert, Badge, ConfigProvider, Empty, Flex, Progress, Radio, Segmented,
-  Table, Tag,
+  Alert, Badge, Empty, Flex, Progress, Table, Tabs,
 } from 'antd';
-import {theme} from './theme';
 import { useEffect, useRef, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import type { TableColumnsType } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
-import { Globe2 } from 'lucide-react';
 import { readInstances, readStatus } from './data';
 import { remainingTraffic } from './traffic';
 import type { InitialData, Item, Range, State, StatusBundle } from './data';
-import { StatusSkeleton } from './loading.mjs';
 import { HostMetrics } from './load';
-import routeMark from './assets/routepilot-mark.svg';
-import japanFlag from './assets/jp.svg';
+import type { HostLoad } from './load';
+import { InstanceNavigation } from './instance-navigation';
 
 import { HistoryBars, labels, states, windows, displayTime } from './status-history';
-const countryFlags: Record<string, string> = { JP: japanFlag };
 const number = (value: number) => value.toLocaleString('zh-CN');
 
-function StatusPage({ initial }: { initial: InitialData }) {
+export type PrivateNode = {
+  instance: { id: string; name: string }; reportedAt: number | null;
+  load: HostLoad | null;
+};
+
+export function StatusOverview({ initial, privateNode, hidden }: {
+  initial: InitialData; privateNode?: PrivateNode | null; hidden?: boolean;
+}) {
   const [instances, setInstances] = useState(initial.instances);
   const [instanceId, setInstanceId] = useState<string | null>(initial.instances[0]?.id ?? null);
   const [instanceError, setInstanceError] = useState(initial.instanceError);
@@ -124,14 +124,16 @@ function StatusPage({ initial }: { initial: InitialData }) {
     return () => clearInterval(timer);
   }, []);
 
-  if (!data && !error && !instanceError && online) return <StatusSkeleton />;
+  const loading = !data && !error && !instanceError && online;
 
   const expired = !data || now - data.at > 150;
   const currentState = (item: Item): State =>
     !online || expired || error || !item.at || now - item.at > 150 ? 'unknown' : item.status;
   const traffic = remainingTraffic(data?.traffic, Boolean(online && !error && !expired && data?.lastReport && now - data.lastReport <= 150), now);
   const remaining = traffic?.percent ?? null;
-  const quotaColor = states[traffic?.level ?? 'ok'].color;
+  const quotaColor = traffic?.level && traffic.level !== 'ok' ? states[traffic.level].color : 'var(--rp-primary)';
+  const managedNode = privateNode?.instance.id === instanceId ? privateNode : null;
+  const privateFresh = online && !!managedNode?.reportedAt && now - managedNode.reportedAt <= 150;
 
   const columns: TableColumnsType<Item> = [
     {
@@ -179,100 +181,78 @@ function StatusPage({ initial }: { initial: InitialData }) {
   ];
 
   return (
-    <ConfigProvider theme={theme} locale={zhCN}>
-      <div className="status-page">
-        <header className="site-header">
-          <a className="brand" href="/" aria-label="route-pilot 首页">
-            <img src={routeMark} alt="" width={40} height={40} />
-            <span>route-pilot</span>
-          </a>
-          {data && <time dateTime={new Date(data.at * 1000).toISOString()}>更新于 {displayTime(data.at)}</time>}
-        </header>
-        <main>
-          <nav className="instance-navigation" aria-label="监控实例">
-            <Radio.Group
-              aria-label="选择实例"
-              className="instance-tabs"
-              optionType="button"
-              buttonStyle="solid"
-              name="instance"
-              value={instanceId}
-              options={instances.map(instance => ({
-                value: instance.id,
-                label: <span className="instance-label">
-                  {instance.country && countryFlags[instance.country]
-                    ? <img className="country-flag" src={countryFlags[instance.country]} alt={instance.country} width={21} height={14} />
-                    : <Globe2 size={16} aria-hidden="true" />}
-                  <span>{instance.name}</span>
-                </span>,
-              }))}
-              onChange={({ target: { value } }) => {
-                if (value !== instanceId) {
-                  setInstanceId(value);
-                  setBundle(null);
-                  setError(false);
-                  setActiveTooltip(null);
-                }
-              }}
-            />
-          </nav>
+        <main className="status-content" hidden={hidden}>
+          <h1 className="sr-only">节点状态</h1>
+          <section className="node-overview" aria-label="节点概况">
+            <InstanceNavigation instances={instances} value={instanceId} onChange={value => {
+              if (value !== instanceId) {
+                setInstanceId(value);
+                setBundle(null);
+                setError(false);
+                setActiveTooltip(null);
+              }
+            }} />
+          </section>
+
           {!online && <Alert type="warning" title="设备已离线，联网后自动恢复" showIcon className="status-alert" />}
           {online && instanceError && <Alert type="warning" title="暂时无法读取实例列表" showIcon className="status-alert" />}
           {online && error && <Alert type="warning" title="读取失败，正在自动重试" showIcon className="status-alert" />}
           {online && data && expired && !error && <Alert type="warning" title="数据已过期，等待更新" showIcon className="status-alert" />}
 
-          <section className="traffic-row" aria-label="剩余流量">
-            <div className="traffic-label">
-              <h2>剩余流量</h2>
-              <Tag className="period-tag">每月</Tag>
-            </div>
-            <Flex align="center" className="traffic-meter">
+          <HostMetrics load={managedNode ? privateFresh ? managedNode.load : null : !online || error || expired ? null : data?.load}>
+            <div className="host-metric traffic-metric" aria-label="剩余流量">
+              <div className="host-metric-label">
+                <span>本月剩余流量</span>
+                <span className="traffic-amount">
+                  {traffic ? <><span className="traffic-remaining"><small>约 </small>{number(traffic.remainingGB)} <small>GB</small></span><small className="traffic-total">/ {number(traffic.planGB)} GB</small></> : '—'}
+                </span>
+              </div>
               <Progress
                 className="quota-progress"
                 percent={remaining ?? 0}
                 strokeColor={quotaColor}
-                railColor="#e9edf3"
-                size={['100%', 8]}
+                railColor="var(--rp-rail)"
+                size={['100%', 3]}
                 showInfo={false}
                 aria-label="本月剩余流量百分比"
               />
-            </Flex>
-            <Flex vertical align="flex-end" gap={4} className="traffic-summary">
-              <span className="quota-percentage">{remaining === null ? '—' : Number(remaining.toFixed(1)) + '%'}</span>
-              <span className="traffic-amount">
-                {traffic ? <>约 {number(traffic.remainingGB)} <span>/ {number(traffic.planGB)} GB</span></> : '待更新'}
-              </span>
-            </Flex>
-          </section>
-
-          <HostMetrics load={!online || error || expired ? null : data?.load} />
+            </div>
+          </HostMetrics>
           <section aria-labelledby="history-title" className="history-section">
-            <Flex justify="space-between" align="center" gap={16} className="section-heading">
-              <h2 id="history-title">稳定性记录</h2>
-              <Segmented<Range>
-                aria-label="时间范围"
-                value={range}
-                options={Object.entries(windows).map(([value, label]) => ({ value: value as Range, label }))}
-                onChange={value => {
-                  if (value !== range) {
-                    setRange(value);
-                    setActiveTooltip(null);
-                  }
-                }}
-              />
-            </Flex>
-            <Table<Item>
-                className="status-table"
-                columns={columns}
-                dataSource={data?.checks ?? []}
-                rowKey="id"
-                pagination={false}
-                tableLayout="fixed"
-                locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据" /> }}
+            <h2 id="history-title">稳定性记录</h2>
+            <Tabs
+              className="history-tabs"
+              aria-label="时间范围"
+              activeKey={range}
+              tabBarGutter={0}
+              indicator={{ size: width => width - 28, align: 'center' }}
+              animated={{ inkBar: true, tabPane: false }}
+              destroyOnHidden
+              onChange={value => {
+                if (value !== range) {
+                  setRange(value as Range);
+                  setActiveTooltip(null);
+                }
+              }}
+              items={Object.entries(windows).map(([value, label]) => ({
+                key: value, label,
+                children: value === range ? <>
+                  <Table<Item>
+                    className="status-table"
+                    columns={columns}
+                    dataSource={data?.checks ?? []}
+                    rowKey="id"
+                    pagination={false}
+                    tableLayout="fixed"
+                    loading={loading}
+                    locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据" /> }}
+                  />
+                  <Flex className="history-legend" gap={18} justify="center" wrap>
+                    {Object.values(states).map(state => <Badge key={state.label} color={state.color} text={state.label} />)}
+                  </Flex>
+                </> : null,
+              }))}
             />
-            <Flex className="history-legend" gap={18} justify="center" wrap>
-              {Object.values(states).map(state => <Badge key={state.label} color={state.color} text={state.label} />)}
-            </Flex>
           </section>
 
           {!!data?.events.length && (
@@ -293,11 +273,5 @@ function StatusPage({ initial }: { initial: InitialData }) {
             </section>
           )}
         </main>
-      </div>
-    </ConfigProvider>
   );
-}
-
-export function mount(initial: InitialData) {
-  createRoot(document.getElementById('root')!).render(<StatusPage initial={initial} />);
 }

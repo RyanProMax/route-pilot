@@ -11,11 +11,10 @@ export default defineConfig({
   plugins: [react(), {
     name: 'status-loading-shell',
     transformIndexHtml(html, context) {
-      if (context.filename.endsWith('/admin/index.html')) return html;
       const cache = createCache();
       const skeleton = renderToString(createElement(StyleProvider, { cache }, createElement(StatusSkeleton)));
       const app = Object.values(context.bundle ?? {}).find(entry =>
-        entry.type === 'chunk' && entry.facadeModuleId?.endsWith('/src/status.tsx'));
+        entry.type === 'chunk' && entry.facadeModuleId?.endsWith('/src/app.tsx'));
       // This chunk is always needed: start it at HTML parsing, alongside the data preload.
       if (app) html = html.replace('</head>', `<link rel="modulepreload" crossorigin href="/${app.fileName}"/></head>`);
       // The page stylesheet is only a few KB: inline it so the skeleton needs no CSS round trip.
@@ -32,10 +31,10 @@ export default defineConfig({
     injectRegister: 'script-defer',
     includeManifestIcons: false,
     manifest: {
-      id: '/', name: 'route-pilot', short_name: 'route-pilot', lang: 'zh-CN',
+      id: '/', name: 'Route Pilot', short_name: 'Route Pilot', lang: 'zh-CN',
       description: '节点服务状态与稳定性记录',
       start_url: '/', scope: '/', display: 'standalone',
-      theme_color: '#ffffff', background_color: '#fafbfd',
+      theme_color: '#ffffff', background_color: '#ffffff',
       icons: [
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -58,9 +57,11 @@ export default defineConfig({
     },
   })],
   root: 'status',
+  appType: 'mpa',
   resolve: { alias: { '/src': fileURLToPath(new URL('./src', import.meta.url)) } },
   publicDir: '../public',
-  server: { proxy: { '/status': 'http://127.0.0.1:8787', '/private': 'http://127.0.0.1:8787' } },
-  build: { outDir: '../dist-status', emptyOutDir: true, assetsInlineLimit: 0,
-    rollupOptions: {input:{status:fileURLToPath(new URL('./status/index.html',import.meta.url)),admin:fileURLToPath(new URL('./status/admin/index.html',import.meta.url))}} },
+  server: { proxy: Object.fromEntries(['/status', '/private', '/sub', '/api/report'].map(prefix => [prefix, {
+    target: 'https://127.0.0.1:8787', secure: false,
+  }])) },
+  build: { outDir: '../dist-status', emptyOutDir: true, assetsInlineLimit: 0 },
 });

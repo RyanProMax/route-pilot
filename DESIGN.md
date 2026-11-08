@@ -1,264 +1,58 @@
----
-name: route-pilot
-description: A quiet public status sheet with visible choices and unruled observations.
-colors:
-  primary: "#6476ae"
-  primary-hover: "#56689d"
-  primary-active: "#4a5c90"
-  healthy: "#159b76"
-  slow: "#bd9425"
-  error: "#d3635b"
-  unknown: "#e1e6ed"
-  white: "#ffffff"
-  canvas: "#fafbfd"
-  ink: "#1c2638"
-  muted: "#65718a"
-  secondary-ink: "#526079"
-  line: "#e9edf4"
-  tab-surface: "#f0f3f8"
-  tab-hover: "#e6ebf4"
-  period-surface: "#edf1f8"
-  progress-rail: "#e9edf3"
-  range-track: "#f0f3f8"
-  selection: "#e3e9f5"
-typography:
-  body:
-    fontFamily: 'Manrope, "PingFang SC", "Microsoft YaHei", sans-serif'
-    fontSize: "14px"
-    fontWeight: 400
-  brand:
-    fontSize: "23px"
-    fontWeight: 700
-    letterSpacing: "-0.035em"
-  title:
-    fontSize: "18px"
-    fontWeight: 600
-    letterSpacing: "-0.01em"
-  node:
-    fontSize: "14px"
-    fontWeight: 600
-    lineHeight: "42px"
-  secondary:
-    fontSize: "12px"
-    fontWeight: 400
-  label:
-    fontSize: "11px"
-    fontWeight: 500
-  amount:
-    fontSize: "17px"
-    fontWeight: 600
-rounded:
-  sample: "2px"
-  control: "8px"
-  period: "20px"
-spacing:
-  compact: "8px"
-  related: "10px"
-  small: "12px"
-  content: "16px"
-  group: "20px"
-  section: "24px"
-  separation: "32px"
-components:
-  node-tab:
-    backgroundColor: "{colors.tab-surface}"
-    textColor: "{colors.secondary-ink}"
-    typography: "{typography.node}"
-    rounded: "{rounded.control}"
-    padding: "0 20px"
-    height: "44px"
-  node-tab-hover:
-    backgroundColor: "{colors.tab-hover}"
-  node-tab-selected:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.white}"
-  node-tab-selected-hover:
-    backgroundColor: "{colors.primary-hover}"
-  node-tab-selected-active:
-    backgroundColor: "{colors.primary-active}"
-  quota-row:
-    padding: "22px 0"
-  period-tag:
-    backgroundColor: "{colors.period-surface}"
-    textColor: "{colors.secondary-ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.period}"
-    padding: "0 13px"
-  range-control:
-    backgroundColor: "{colors.range-track}"
-    typography: "{typography.secondary}"
-    rounded: "{rounded.control}"
-    padding: "4px"
-  range-selected:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.white}"
-  history-sample:
-    rounded: "{rounded.sample}"
-    padding: "0"
-    height: "26px"
----
-
-<!-- impeccable:design-contract
-seed: a602ec91
-scope: implemented public status surface
-visual-authority: user-approved console/login, unified public home
-image-comp: approved console and login references viewed locally
-quality-bar-reference: none selected
-finish-review: ship; no material visual fixes
-sources: web/src/status.tsx; web/src/status.css; web/status/index.html; web/src/assets/routepilot-mark.svg
--->
+# Route Pilot 视觉规范
 
-# Design System: route-pilot
+2026-11-08：用户选定墨白方向，认可双路径标识，要求所有指标平铺、保留长条状态历史、通过悬浮气泡显示详情。以现有前端结构和功能为基础，同步覆盖公开状态页、管理员视图和登录模态窗。
 
-## Overview
+## 品牌与主题
 
-**Creative North Star: "The Quiet Status Sheet"**
+- 品牌显示文字统一为 **Route Pilot**，不使用小写连字符形式。
+- 标识使用 `web/src/assets/routepilot-mark.svg`：32 × 32 双路径线形图案，圆头笔画。浏览器、PWA 和离线页使用同一源图。
+- 背景白色 `#ffffff`；主色与正文 `#262626`；次要文字 `#666666`；分隔线和进度底轨 `#e8e8e8`；浅色选中面 `#f2f2f2`。全部采用中性灰，不带绿色倾向。
+- 健康 `#348267`、缓慢 `#a77c25`、异常 `#bf6057`、无数据 `#dddddd`。状态保留绿、黄、红、灰语义色，包括历史条、在线标记和成功标签；黑白灰主题用于按钮、导航、背景和正文。状态颜色有文字和图例解释，不以历史正常推断当前正常。
+- 普通资源进度和剩余流量用墨色；剩余流量低于 25% 用琥珀色，低于 10% 用红色。无数据、过期、无效配额、UTC 月份不匹配显示破折号。
+- `web/src/theme.ts` 与 `web/src/status.css` 的 `--rp-*` 变量是共享主题入口；`app.css` 定义应用外壳和管理视图布局。
 
-route-pilot makes public operational evidence easy to scan on a cool-white page. The abstract R mark, low-saturation blue-gray selections, an unfilled quota row, and unruled history rows share the approved console visual system. Manrope gives Latin lettering a distinct voice while operating-system Chinese fonts keep the interface familiar and legible.
+## 排版与布局
 
-The public home, administrator console and login now share `theme.ts`, the `--rp-*` CSS tokens and `assets/routepilot-mark.svg`. The user-approved console and login are the visual reference. Health colors remain semantic. Light appearance is explicit under both system color preferences.
+使用本地 Manrope 字体，中文回退 PingFang SC / Microsoft YaHei；数值使用等宽数字。品牌 22px / 600，主要标题 30–34px / 500，区块标题 20px，正文 14px，辅助标签 12px。移动端主要操作和监测名称使用 16px。
 
-**Key Characteristics:**
+内容最大宽度 1120px，桌面外侧至少 48px，820px 以下为 24px。白色背景与留白形成层次；资源区不添加上下装饰分隔线，状态区不包裹卡片、不增加装饰性阴影。
 
-- A cool-white page with blue-gray selection and an unfilled quota row.
-- Visible, wrapping node choices with a country flag or globe.
-- Unruled observation rows with aligned, tabular measurements.
-- Four consistent state colors, always explained by words or the legend.
-- A compact route-R mark and Manrope Latin lettering with system Chinese fallbacks.
+公开页顺序：品牌和登录入口 → 节点切换 → 同行的 CPU、内存、磁盘与本月剩余流量 → 六项稳定性记录 → 实际存在的状态变化。四项指标统一字号与进度条对齐，820px 以下使用两列。不展示更新时间、已选节点大标题和健康摘要。全部指标直接可见，没有更多指标折叠。
 
-## Colors
+节点列表从现有 `/instances.json` 获取，选项显示国家代码和节点名称，自动换行，不限制为一个节点。切换时清空旧节点数据和气泡，节点入口保持可用。不同节点的数据不能混用。默认选中首个节点。
 
-The palette pairs a muted blue-gray accent with cool neutrals; brighter colors belong to measured states.
+桌面与手机资源均为三列，手机缩小列间距。节点概况在手机上纵向排列，时间选择独占一行。820px 以下历史表格变成两行：项目、成功率、建连耗时在上，长条历史占满下方，不丢弃测量字段。
 
-### Primary
+CPU、内存、磁盘显示百分比和进度条。页面不展示系统平均负载。公开页与管理员页共享此组件。
 
-- **Blue-gray:** `primary` identifies the selected node, the route mark, and keyboard focus. Its hover and active companions deepen or lighten the same interaction role.
-- **Healthy Green:** `healthy` marks healthy samples, status dots, and the ordinary remaining-quota fill.
+## 历史与交互
 
-### Secondary
+- 每行保持 72 个历史样本，桌面高度 26px / 间距 3px，移动端高度 24px / 间距 2px。
+- 悬浮或键盘聚焦显示气泡，触屏点按显示。一次只打开一个气泡，时间或节点切换关闭；Escape 可关闭聚焦气泡。气泡限制在视口内，不使用详情模态窗。
+- 气泡保留状态与时间区间；连接数据保留已知的凭证数和连接档位。零与缺失值严格区分。
+- 成功率是历史统计，入口耗时是最新 TCP 建连耗时，连接历史是峰值档位；不伪装成精确历史连接数。
+- 悬浮仅改变长条绘制形状，命中区域固定；边缘放大限制在轨道内。尊重 reduced-motion，保留可见键盘焦点。
+- 时间范围切换使用同一请求返回的三个窗口，不重新拉取。背景更新和离线时保留历史，当前状态遵循已有 150 秒时效规则。
+- 时间范围使用 Ant Design Tabs 的活动下划线和内置滑动过渡；不显示选中背景块或阴影。移动端均分一行，尊重系统减少动态效果的设置。
 
-- **Slow Amber:** `slow` identifies the “缓慢” state and a low remaining quota.
-- **Error Coral:** `error` identifies the “异常” state and the most depleted quota condition. These are semantic colors rather than additional brand accents.
+## 统一首页与登录
 
-### Neutral
+访客和管理员共用 `/`、同一应用外壳和 `StatusOverview`。默认展示脱敏状态，右上角显示“登录”。认证确认是管理员后，显示 Ant Design Menu 管理菜单和账号下拉菜单；凭证页为 `/?view=credentials`，操作记录为 `/?view=activity`。
 
-- **White:** The header and tooltip use `white`; the page uses `canvas`, and tables are transparent. Selected controls use the primary blue-gray.
-- **Ink:** `ink` carries names and headings; `secondary-ink` carries supporting metrics and inactive node labels; `muted` carries timestamps, headers, and legend text.
-- **Pale Surfaces:** `tab-surface`, `tab-hover`, `period-surface`, `progress-rail`, and `range-track` provide small, purpose-specific tonal changes.
-- **Unknown Gray:** `unknown` marks “无数据” in both current states and history.
-- **Fine Line:** `line` supports the table heading baseline; observation and event rows remain unruled.
-- **Text Selection:** `selection` is the page's pale blue selection highlight.
+管理菜单相对整个页头水平居中，品牌与账号分别靠左右两侧；手机端菜单独占第二行并居中。管理内容区顶部间距为 24px。首页点击品牌不重新导航，其他管理页点击品牌通过应用内导航返回首页。
 
-**The State Has Meaning Rule.** Keep 健康, 缓慢, 异常, and 无数据 consistent across current badges, history samples, the legend, and event records. Preserve a text explanation of color.
+登录通过 Ant Design Modal 展示 Google 方式，一期仅支持已授权管理员。标题为居中的“登录”，隐藏关闭图标，支持点击遮罩或 Escape 关闭。登录按钮使用只显示 Google Logo 的圆形 Ant Design Button，并保留无障碍名称。没有独立登录页，也不展示普通用户注册入口。Google 回调回到 `/`；失败结果在首页登录模态窗显示。不再提供单独的管理员路径或兼容跳转。
 
-**The Evidence Before Green Rule.** Missing, failed-to-load, or stale current observations show no data. A green historical sample cannot establish current health.
+管理员概览和公开页采用相同布局，不展示额外的节点服务、在线凭证、当前连接摘要行。已授权时仅对匹配的管理节点使用私有资源指标，切换节点不混用数据。管理 API 每个部署仍提供一个节点；跨节点管理接口不在本次范围内。
 
-## Typography
+凭证管理移除重复页头与节点名称，创建凭证按钮位于 Ant Design Tabs 右侧。Tabs 仅保留选中项短下划线，不显示整行底线。
 
-**Body Font:** Manrope, with PingFang SC, Microsoft YaHei, and generic sans-serif fallbacks as recorded in `typography.body`. The variable Manrope font is served locally and preloaded by the status entry point. Latin characters use Manrope; Chinese characters use the available system fallback.
+菜单、登录模态窗、抽屉、表单、表格、选择器、状态标签和提示均使用 Ant Design。自定义样式主要用于墨白主题、布局及长条历史。保留创建、修改、撤销等管理表单及必要确认；状态详情始终使用气泡。
 
-**Character:** Rounded geometric Latin lettering and restrained weight changes make the page approachable without turning status into decoration. The page uses tabular numerals; no separate monospace family is introduced.
+退出或会话被拒绝时清空私有数据、表单、订阅抽屉和操作确认，返回脱敏首页；过期请求的结果不能重新显示私有信息。Google 认证、服务端管理员角色检查、私有 API 的 no-store 规则保持有效。
 
-### Hierarchy
+## 静态资源与预览
 
-- **Brand:** `brand` gives the wordmark its tight spacing and strong weight. It contracts at the two mobile breakpoints.
-- **Title:** `title` names the quota, stability, and optional event sections.
-- **Body:** `body` is the table and page baseline; check names use a medium weight.
-- **Node:** `node` makes the selected and available instances equally easy to locate.
-- **Secondary:** `secondary` supports the update time, metrics, current states, and time-range control.
-- **Label:** `label` supports column headings and the monthly tag; legend labels use the same size with regular weight.
-- **Amount:** `amount` emphasizes the remaining quota, followed by a smaller, muted total and unit.
+`npm --prefix web run icons` 从共享 SVG 导出 favicon、标准、maskable 和 Apple 图标。离线页只保留品牌、连接提示和重试；PWA 不缓存实例配置、测量、私有响应或应用 HTML。
 
-**The Stable Measurement Rule.** Keep numerals tabular and rate, duration, and quota values aligned. Preserve the em dash when a value is unavailable.
-
-## Layout
-
-Public main content is centered at a maximum of 1320px with 3.8% desktop gutters. The full-width white header is 76px tall, matching the console; its 30px brand mark sits at the left and update timestamp at the right. The main sequence is node selection, quota, host resources, stability records, and optional state changes. The public surface has no sidebar, refresh action or disclosure rows.
-
-Node choices wrap naturally with a 10px gap. Each stays visibly selected during background updates; the control never becomes a horizontally scrolling tab rail. The quota row aligns with the observation table: heading with monthly tag, full-length meter, then the percentage and amount stacked at the right across the final two numeric columns. The rail uses the same 16px cell insets as history strips, so both ends align. It has no border or shadow. The history section follows the framed resource row, with a 36px section offset, with its title and time-range selector on one line.
-
-The desktop observation table aligns check name with its current status dot, history, success rate, and connection duration. Rows are 66px tall, without bottom rules or hover fills. History samples are 26px tall with a 3px gap. Only the column-heading baseline separates the heading from the evidence. The legend is horizontally centered below the table. Event records, when present, use a compact unruled table below.
-
-At **820px and below**, page gutters become 20px and the header contracts to 70px. The brand mark remains 30px and its wordmark becomes 21px. The quota heading and monthly tag share the first row; its full-width meter spans the second, with the percentage and remaining amount aligned at opposite ends below it. The history section begins after 36px. Table headings disappear, and each observation becomes a two-row grid: identity and metrics above a full-width history strip. The strip becomes 24px tall with a 2px gap, and the legend remains centered. No measurement column is discarded.
-
-At **360px and below**, the wordmark becomes 21px, the mark 28px, and the time-range text 10px. Observation-column gaps contract to 8px. The reviewed 320px layout retains its visible node selector, quota, metrics, histories, and four-state legend.
-
-**The Unruled Row Rule.** Use alignment and whitespace to separate observations. Keep borders, row hover fills, and enclosing cards out of the status list.
-
-## Elevation & Depth
-
-The main surface is flat. White space and alignment provide structure; the node tabs and history buttons have no resting shadow. The time-range control has a flat blue-gray selected segment with white text and no shadow; Ant Design's moving thumb preserves selection continuity. The soft floating treatment remains confined to history tooltips. Keyboard focus uses a blue-gray outline, rather than lifting a surface.
-
-The sidecar records the installed library's tooltip filter separately from the frontmatter's primitives.
-
-## Shapes
-
-The abstract R is the shared filled vector in `web/src/assets/routepilot-mark.svg`, also used by both entry favicons. Preserve its proportions and clear space. The login page retains its approved near-black treatment of the same mark.
-
-Node choices are individually rounded rectangles, with neither joined separators nor an enclosing track. The quota row has no enclosing fill, border, shadow, or container radius. The monthly tag is a small pill, status dots are circles, and history samples are narrow rectangles with minimally softened corners. The flag is a small rectangular asset with the same corner softening as history samples. No illustrative imagery is part of the current surface.
-
-## Components
-
-### Brand and Update Time
-
-The route mark and wordmark form a home link. The update timestamp sits opposite them in muted type and reports the displayed data's update time. Both remain on one header line at the reviewed mobile widths. Static timestamp text has the default cursor.
-
-The installed mobile app uses the same route mark on an opaque cool-white launcher tile, with separate maskable and Apple exports. Standalone display retains the ordinary status page and respects device safe areas; no install banner or extra navigation is added. Offline launches use the same quiet brand treatment and a concise connection message with retry. Already-open pages preserve historical evidence while marking current health unavailable when offline.
-
-### Node Selection
-
-Ant Design `Radio.Group` with button options provides the node choices. Each label pairs a country flag, or a globe fallback, with a node name. The default surface is pale; selection uses white text on blue-gray. Hover and pressed states use the recorded variants, and the controls remain flat.
-
-The control height stays 44px. Horizontal padding contracts from 20px to 18px on mobile. The wrapper exposes a blue-gray focus outline when its radio receives keyboard focus. Preserve radio semantics, a visible selection, and wrapping behavior when instances are added.
-
-### Remaining Quota
-
-An unfilled row aligned with the status sheet contains the heading, monthly tag, progress rail, percentage, and remaining/total amount. The rail matches the history strip width on desktop and fills the same available row on mobile; percentage text sits outside that aligned rail. The rail is 8px thick. Low remaining quota changes its fill to amber, then coral; missing or stale values show an em dash or “待更新”. The row itself is static and has the default cursor.
-
-### Time Range
-
-Ant Design `Segmented` provides the three time windows. The selected segment uses white text on a blue-gray fill and a pale cool track. Both the selected item and moving thumb are shadowless, and the library's thumb movement is retained. It stays beside the stability heading on mobile, with smaller text and track padding. Preserve its keyboard behavior and selected-state semantics; the control switches between three histories delivered by one bundled request. Switching never clears the table or triggers a request; one foreground poll updates all three windows every minute.
-
-### Observations and History Samples
-
-Observation rows are static records. A small current-status dot precedes each check name; its accessible label names the status. There is no separate current-status column or repeated status word. Credential and connection values are available in the history tooltips. Counts and their history representation follow the current data contract.
-
-Each history sample is a button. Color carries its measured state; connection-history height may additionally encode count magnitude. Hover or keyboard focus slightly darkens a sample. All states keep zero-width borders and fixed hit targets. On fine-pointer hover, painted bars animate via transforms: the focused bar widens to 2.2× and grows upward to 1.12× height, with the two neighbors on each side narrowing to .55× and .85×. Their offsets preserve gaps and the total rail length. Endpoints use bounded 1.6×/2.05× expansion. Arrival uses 220ms and exit 160ms with cubic-bezier(0.16, 1, 0.3, 1). No layout width changes, moving hit regions, additional pointer handlers or animation dependency are needed. Touch keeps the original bar geometry; reduced-motion disables spatial expansion while preserving focus, color and tooltip feedback. Its accessible name includes the check, time interval, and state or value. The surrounding text and metrics keep the default cursor; only the sample controls use a pointer.
-
-### History Tooltip
-
-One tooltip is open at a time, sized to its content with no repeated check title or stretched spacing. Every tooltip uses two rows: a leading status dot followed by the state or measurements, then the time interval 6px below. Same-day ranges use `11/05 17:00 – 17:20`; intervals crossing local midnight retain both dates. When both credential and connection measurements exist, they share the first row with a 12px gap; the leading dot is 8px before the measurements. Omit unavailable credential data and retain a measured zero. Numeric values use semibold weight and units use secondary text. Content padding is 12px by 14px; width is intrinsic and capped at the viewport minus 24px. Missing observations retain “无数据” and its unknown-status dot. Pointer devices use hover and focus; touch devices use click. Changing node or time range closes the active tooltip. Keep outside dismissal and the single-tooltip behavior intact.
-
-### Legend, Events, and Feedback
-
-The four-state legend repeats the same dot-and-word treatment as current health. Optional state-change records align check, state, and time without header labels or row rules. Warnings, loading skeletons, and the empty state use the existing Ant Design components within the same page width. Initial loading uses one complete Ant Design skeleton, including the brand, update time, instance choice, quota, range control, table and legend. It is rendered into static HTML at build time, so no application download is required to reveal the layout. Its desktop and mobile geometry follows the loaded page; no actual labels or placeholder health claims are mixed into it. Range changes and background updates preserve the table; a failed refresh retains history and marks current readings unavailable.
-
-Node-state color transitions last 180ms with an ease-out curve. Other library transitions remain brief. The reduced-motion query reduces animation and transition duration to 0.01ms. Global focus uses a 2px blue-gray outline with a 4px offset; node wrappers use a 3px offset. Static text uses the default cursor, interactive controls use a pointer, and editable text fields, if introduced, use a text cursor.
-
-## Do's and Don'ts
-
-### Do:
-
-- **Do** preserve the white single-page composition and visible, wrapping node selection.
-- **Do** use the route-R vector mark and Manrope with system Chinese fallbacks.
-- **Do** keep observations unruled, values aligned, and numerals tabular.
-- **Do** explain status color with words or the four-state legend and preserve explicit no-data states.
-- **Do** retain visible keyboard focus, touch-accessible history tooltips, and reduced-motion behavior.
-- **Do** use the default cursor for static text and a pointer for interactive controls.
-- **Do** keep all measurement fields available when rows reflow on narrow screens.
-
-### Don't:
-
-- **Don't** restore a sidebar, refresh button, disclosure rows, or description blocks to this public status surface.
-- **Don't** turn the quota or observation rows into shadowed cards.
-- **Don't** show historical success as current health when evidence is missing or stale.
-- **Don't** use failure colors as decorative accents or turn unknown samples green.
-- **Don't** hard-code account, deployment, or host identifiers into reusable visual examples.
-
-## Host load and private management
-
-Host metrics use one lightly outlined row matching the console resources: four columns on desktop and two on mobile. CPU, memory and disk use 4px rails; one-minute system load is numeric. Missing or stale readings show em dashes. The initial skeleton reserves the same space.
-
-The private `/admin/` surface shares the brand, typography and Ant Design theme. Top navigation contains overview and credential management, with account controls at the right. Operation history is a tab within credential management. Credential creation, rename, subscription access/reset and revocation retain their authorization and confirmation behavior; see `docs/admin-console.md`.
-
-The shared theme must not weaken public redaction, administrator authentication, or the distinction between historical evidence and current health. PWA precaching remains limited to the offline shell and static brand assets; no measurements, instance metadata, private responses or application HTML are added to the service-worker cache.
+`design-demos/scripts/preview-app.cjs` 只在本地回放构建后的前端，以示例数据展示东京和美国节点、访客及管理员状态。它不参与生产构建、不连接真实管理接口、不接受写操作。预览外层标明示例数据。

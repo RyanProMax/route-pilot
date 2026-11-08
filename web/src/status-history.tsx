@@ -11,10 +11,10 @@ export const labels = {
   connections: '节点连接数',
 } as const;
 export const states = {
-  ok: { label: '健康', color: '#159b76' },
-  degraded: { label: '缓慢', color: '#bd9425' },
-  down: { label: '异常', color: '#d3635b' },
-  unknown: { label: '无数据', color: '#e1e6ed' },
+  ok: { label: '健康', color: '#348267' },
+  degraded: { label: '缓慢', color: '#a77c25' },
+  down: { label: '异常', color: '#bf6057' },
+  unknown: { label: '无数据', color: '#dddddd' },
 } as const;
 export const windows = { '24h': '24 小时', '7d': '7 天', '30d': '30 天' };
 const tooltipTrigger: ('hover' | 'focus' | 'click')[] =
@@ -69,6 +69,7 @@ export function HistoryBars({ item, data, instanceId, activeTooltip, setActiveTo
                   </Flex>
                 }
                 trigger={tooltipTrigger}
+                classNames={{ root: 'sample-tooltip' }}
                 open={activeTooltip === tooltipId}
                 onOpenChange={open => setActiveTooltip(current => open ? tooltipId : current === tooltipId ? null : current)}
                 align={{ overflow: { adjustX: true, adjustY: true, shiftX: true } }}
@@ -83,6 +84,7 @@ export function HistoryBars({ item, data, instanceId, activeTooltip, setActiveTo
                   // Keep hit targets fixed; only the painted bars expand and displace neighbors.
                   style={{ '--bar-color': states[status].color, backgroundColor: 'transparent', height, border: 0 } as CSSProperties}
                   aria-label={labels[item.id] + '，' + period + '，' + label}
+                  onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); setActiveTooltip(null); } }}
                 />
               </Tooltip>
             );

@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 const require=createRequire(new URL('../cloud/package.json',import.meta.url));
 const {Miniflare,createFetchMock}=require('miniflare');
 const {build}=require('esbuild');
-const {generateKeyPair,exportJWK,SignJWT}=await import(require.resolve('jose'));
+const {generateKeyPair,exportJWK,SignJWT}=await import(pathToFileURL(require.resolve('jose')).href);
 
 test('Google callback exchanges tokens in the Workers runtime and rejects credential-bearing redirects',async()=>{
   const root=fileURLToPath(new URL('..',import.meta.url));
@@ -45,13 +45,13 @@ test('Google callback exchanges tokens in the Workers runtime and rejects creden
       return JSON.stringify({id_token:signed});
     },{headers:{'content-type':'application/json'}});
     const success=await callback(flow);
-    assert.equal(success.headers.get('location'),'/admin/');assert.equal(exchanges,1);
+    assert.equal(success.headers.get('location'),'/');assert.equal(exchanges,1);
     assert.equal((await db.prepare('SELECT count(*) n FROM rp_sessions').first()).n,1);
     const redirectFlow=await start();
     mock.get('https://oauth2.googleapis.com').intercept({path:'/token',method:'POST'})
       .reply(302,'',{headers:{location:'https://untrusted.example/token'}});
     const rejected=await callback(redirectFlow);
-    assert.equal(rejected.headers.get('location'),'/admin/?login=failed');
+    assert.equal(rejected.headers.get('location'),'/?login=failed');
     assert.equal((await db.prepare('SELECT count(*) n FROM rp_sessions').first()).n,1);
     mock.assertNoPendingInterceptors();
   }finally{await mf.dispose();await mock.close();}

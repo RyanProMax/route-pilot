@@ -1,15 +1,19 @@
 import type { ThemeConfig } from 'antd';
 export const theme: ThemeConfig = {
   token: {
-    colorPrimary: '#6476ae', colorText: '#1c2638', colorTextSecondary: '#65718a',
-    colorBorder: '#dce2ec', colorBorderSecondary: '#e9edf4', colorBgLayout: '#fafbfd',
-    colorBgContainer: '#ffffff', borderRadius: 8, fontSize: 14,
+    colorPrimary: '#262626', colorText: '#262626', colorTextSecondary: '#666666',
+    colorSuccess: '#348267', colorWarning: '#a77c25', colorError: '#bf6057', colorInfo: '#666666',
+    colorSuccessBg: '#f0f7f3', colorSuccessBgHover: '#e3f0e9', colorSuccessBorder: '#dcebe2', colorSuccessBorderHover: '#aacdbb',
+    colorSuccessText: '#286b51', colorSuccessTextHover: '#348267', colorSuccessTextActive: '#20563f',
+    colorInfoBg: '#f5f5f5', colorInfoBorder: '#e8e8e8',
+    colorBorder: '#dddddd', colorBorderSecondary: '#e8e8e8', colorBgLayout: '#ffffff',
+    colorBgContainer: '#ffffff', borderRadius: 6, fontSize: 14, controlHeight: 44,
     fontFamily: 'Manrope, "PingFang SC", "Microsoft YaHei", sans-serif',
   },
   components: {
-    Table: { headerBg: 'transparent', headerColor: '#65718a', headerSplitColor: 'transparent', cellPaddingBlock: 20, cellPaddingInline: 16, rowHoverBg: '#f7f9fc' },
-    Segmented: { trackBg: '#f0f3f8', itemSelectedBg: '#6476ae', itemSelectedColor: '#fff', itemHoverBg: '#e6ebf4', boxShadowTertiary: 'none' },
-    Tooltip: { colorBgSpotlight: '#fff', colorTextLightSolid: '#1c2638' },
-    Radio: { buttonBg: '#f0f3f8', buttonColor: '#526079', buttonSolidCheckedBg: '#6476ae', buttonSolidCheckedHoverBg: '#56689d', buttonSolidCheckedActiveBg: '#4a5c90', buttonSolidCheckedColor: '#fff' },
+    Button: { primaryShadow: 'none', defaultShadow: 'none' },
+    Table: { headerBg: 'transparent', headerColor: '#666666', headerSplitColor: 'transparent', cellPaddingBlock: 20, cellPaddingInline: 16, rowHoverBg: '#f7f7f7' },
+    Tooltip: { colorBgSpotlight: '#fff', colorTextLightSolid: '#262626' },
+    Radio: { buttonBg: '#f5f5f5', buttonColor: '#666666', buttonSolidCheckedBg: '#262626', buttonSolidCheckedHoverBg: '#404040', buttonSolidCheckedActiveBg: '#181818', buttonSolidCheckedColor: '#fff' },
   },
 };

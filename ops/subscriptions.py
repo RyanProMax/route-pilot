@@ -48,7 +48,7 @@ def publish(c, state, directory, rotate=False):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',c['ssh_host']): raise ValueError('Invalid SSH alias')
     managed=subprocess.run(['ssh','-o','BatchMode=yes','-o','StrictHostKeyChecking=yes',c['ssh_host'],
         'sudo -n test -f /etc/routepilot-control/auth-header'],capture_output=True,timeout=20)
-    if managed.returncode==0:raise RuntimeError('Web management is enabled; publish or rotate from /admin/ to preserve the authoritative subscription token')
+    if managed.returncode==0:raise RuntimeError('Web management is enabled; publish or rotate from /?view=credentials to preserve the authoritative subscription token')
     if managed.returncode!=1:raise RuntimeError('Could not verify subscription authority over SSH')
     # Re-export from the authoritative registry; never re-publish stale local credentials.
     result = subprocess.run(['python3',str(ROOT/'ops/register_device.py'),'--config',str(c['_config_path']),

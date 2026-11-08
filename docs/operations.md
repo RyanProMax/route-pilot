@@ -44,7 +44,11 @@ The page fetches this bundle on instance selection, then once per minute while v
 
 ### Browser startup and asset caching
 
-For UI development, run `npm --prefix web run dev`. The Vite server serves the source entry and proxies `/status` to a local Worker on port 8787. The example catalog uses `node-1`; use the same ID in the local Worker's configuration.
+For local development, install both `cloud` and `web` dependencies, then run `npm --prefix web run dev`. This starts the actual React source with Vite at `http://127.0.0.1:5173/` and bundles `cloud/worker.mjs` into a local workerd instance on port 8787. The script applies the repository's D1 migrations and keeps local data in the ignored `cloud/.wrangler/local-d1/` directory. Restart this command after backend changes; frontend changes use Vite hot reload.
+
+The local Worker uses the single instance from `web/public/instances.json`. It starts without reports, administrator accounts or Google credentials, so missing measurements and unavailable login remain explicit. It does not connect to deployed D1 or live node services. Vite proxies API requests to the loopback Worker's generated HTTPS certificate; certificate verification is disabled only for that local development proxy. Production HTTPS and authentication checks are unchanged. Use `npm --prefix web run dev:web` only when managing the local Worker separately.
+
+To display live public measurements, set `ROUTEPILOT_PUBLIC_ORIGIN=https://YOUR_STATUS_HOST` in the ignored `web/.env.local` file, then restart. Only the public instance catalog and status endpoints use this upstream, with normal TLS verification and without forwarding cookies or authorization headers. Google OAuth remains bound to its registered application origin; this public-data option does not bridge administrator sessions between localhost and the deployed site.
 
 The static HTML includes a complete Ant Design skeleton rendered at build time and the small page stylesheet, so rendering it needs no additional CSS request. It contains no instance names, measurements or health claims. The library's extracted styles precede application CSS; preserve that order so overrides and skeleton dimensions work before and after React mounts.
 

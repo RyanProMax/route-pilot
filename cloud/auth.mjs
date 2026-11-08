@@ -55,7 +55,7 @@ export async function googleIdentity(token,env,nonceHash,now,resolveKey=googleKe
 }
 function finish(error,sessionToken) {
   const headers=new Headers(privateHeaders);
-  headers.set('Location','/admin/'+(error?'?login='+error:''));
+  headers.set('Location','/'+(error?'?login='+error:''));
   headers.append('Set-Cookie',cookie(flowName,'',0));
   if(sessionToken)headers.append('Set-Cookie',cookie(sessionName,sessionToken,8*3600));
   return new Response(null,{status:303,headers});

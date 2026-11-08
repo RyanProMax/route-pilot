@@ -2,7 +2,7 @@ import { readInitialData } from './data';
 import './status.css';
 
 // Fetch while React and the component library download, rather than after mounting them.
-void Promise.all([readInitialData(), import('./status')]).then(([initial, app]) => {
+void Promise.all([readInitialData(), import('./app')]).then(([initial, app]) => {
   app.mount(initial);
 }).catch(() => {
   const root = document.getElementById('root');

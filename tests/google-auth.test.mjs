@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
+import {pathToFileURL} from 'node:url';
 import {authAPI,authenticatedAccount,digest,googleIdentity} from '../cloud/auth.mjs';
 import {privateAPI} from '../cloud/private-api.mjs';
 import {database} from './d1.mjs';
-const {generateKeyPair,SignJWT,createLocalJWKSet,exportJWK}=await import(createRequire(new URL('../cloud/package.json',import.meta.url)).resolve('jose'));
+const {generateKeyPair,SignJWT,createLocalJWKSet,exportJWK}=await import(pathToFileURL(createRequire(new URL('../cloud/package.json',import.meta.url)).resolve('jose')).href);
 const {publicKey,privateKey}=await generateKeyPair('RS256');
 const resolveKey=createLocalJWKSet({keys:[{...await exportJWK(publicKey),kid:'test',alg:'RS256'}]});
 const now=Math.floor(Date.now()/1000),origin='https://status.example.com';
@@ -51,8 +52,8 @@ test('valid Google callback creates an RP session; replay, logout, expiry and di
     const flow=await start(env);let calls=0;const perform=exchange(env,flow,await token(env,flow));
     const deps={resolveKey,fetchToken:async(...args)=>{calls++;return perform(...args);}};
     const results=await Promise.all([authAPI(callback(flow),env,now,deps),authAPI(callback(flow),env,now,deps)]);
-    assert.equal(calls,1);assert.equal(results.filter(r=>r.headers.get('location')==='/admin/').length,1);
-    const success=results.find(r=>r.headers.get('location')==='/admin/'),cookie=cookiePart(success,'__Host-routepilot');
+    assert.equal(calls,1);assert.equal(results.filter(r=>r.headers.get('location')==='/').length,1);
+    const success=results.find(r=>r.headers.get('location')==='/'),cookie=cookiePart(success,'__Host-routepilot');
     assert.equal(success.status,303);assert.match(success.headers.get('cache-control'),/no-store/);
     const session=sql.prepare('SELECT * FROM rp_sessions').get();assert.equal(session.hash,await digest(cookie.split('=')[1]));
     assert.equal(session.expires,now+8*3600);assert.equal(sql.prepare('SELECT google_sub FROM rp_accounts').get().google_sub,'google-subject-1');
@@ -75,13 +76,13 @@ test('callback rejects wrong browser/state, expired attempts, duplicate paramete
     for(const request of [callback(flow,{headers:{cookie:'__Host-routepilot_oauth='+'a'.repeat(64)}}),
       req('/private/auth/google/callback?state='+'b'.repeat(64)+'&code=x',{headers:{cookie:flow.flow}}),
       req('/private/auth/google/callback?state='+flow.state+'&code=a&code=b',{headers:{cookie:flow.flow}})]){
-      assert.equal((await authAPI(request,env,now,deps)).headers.get('location'),'/admin/?login=expired');
+      assert.equal((await authAPI(request,env,now,deps)).headers.get('location'),'/?login=expired');
     }
-    assert.equal((await authAPI(callback(flow),env,now+601,deps)).headers.get('location'),'/admin/?login=expired');
+    assert.equal((await authAPI(callback(flow),env,now+601,deps)).headers.get('location'),'/?login=expired');
     const next=await start(env);
     const cancelled=req('/private/auth/google/callback?error=access_denied&state='+next.state,{headers:{cookie:next.flow}});
-    assert.equal((await authAPI(cancelled,env,now,deps)).headers.get('location'),'/admin/?login=cancelled');
-    assert.equal((await authAPI(callback(next),env,now,deps)).headers.get('location'),'/admin/?login=expired');
+    assert.equal((await authAPI(cancelled,env,now,deps)).headers.get('location'),'/?login=cancelled');
+    assert.equal((await authAPI(callback(next),env,now,deps)).headers.get('location'),'/?login=expired');
     assert.equal(sql.prepare('SELECT count(*) AS n FROM rp_sessions').get().n,0);
   }finally{sql.close();}
 });
@@ -96,7 +97,7 @@ test('Google ID tokens require valid signature, issuer, audience, nonce, lifetim
     const other=await generateKeyPair('RS256');
     await assert.rejects(()=>token(env,flow,{},other.privateKey).then(t=>googleIdentity(t,env,nonceHash,now,resolveKey)));
     const failed=await authAPI(callback(flow),env,now,{resolveKey,fetchToken:exchange(env,flow,await token(env,flow,{nonce:'wrong'}))});
-    assert.equal(failed.headers.get('location'),'/admin/?login=failed');
+    assert.equal(failed.headers.get('location'),'/?login=failed');
     assert.equal(sql.prepare('SELECT count(*) AS n FROM rp_sessions').get().n,0);
   }finally{sql.close();}
 });
@@ -104,12 +105,12 @@ test('Google ID tokens require valid signature, issuer, audience, nonce, lifetim
 test('RP never self-registers unknown users or rebinds an account; stable Google subject survives email changes',async()=>{
   const {sql,env}=setup();try{
     async function login(changes){const flow=await start(env);return authAPI(callback(flow),env,now,{resolveKey,fetchToken:exchange(env,flow,await token(env,flow,changes))});}
-    assert.equal((await login({email:'unknown@example.com'})).headers.get('location'),'/admin/?login=denied');
-    assert.equal((await login({})).headers.get('location'),'/admin/');
-    assert.equal((await login({sub:'another-subject'})).headers.get('location'),'/admin/?login=denied');
-    assert.equal((await login({email:'renamed@example.com'})).headers.get('location'),'/admin/');
+    assert.equal((await login({email:'unknown@example.com'})).headers.get('location'),'/?login=denied');
+    assert.equal((await login({})).headers.get('location'),'/');
+    assert.equal((await login({sub:'another-subject'})).headers.get('location'),'/?login=denied');
+    assert.equal((await login({email:'renamed@example.com'})).headers.get('location'),'/');
     sql.exec('UPDATE rp_accounts SET disabled=1');
-    assert.equal((await login({})).headers.get('location'),'/admin/?login=denied');
+    assert.equal((await login({})).headers.get('location'),'/?login=denied');
     assert.equal(sql.prepare('SELECT count(*) AS n FROM rp_accounts').get().n,1);
   }finally{sql.close();}
 });

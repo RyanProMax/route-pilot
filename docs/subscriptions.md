@@ -40,9 +40,9 @@ Node revocation validates and replaces the Xray configuration, then restarts Xra
 
 ## Admin and accounting
 
-Open `/admin/` on the deployed status hostname. [Google login](admin-login.md) verifies identity directly at the Worker; RP manages allowed accounts and revocable sessions in D1. No public registration or fallback key login is available. The console manages credential lifecycle through a bounded task queue; reporting, provisioning and the control task use separate credentials. Browser sessions use eight-hour Secure, HttpOnly, SameSite=Lax cookies, with only their hashes stored in D1.
+Open `/` on the deployed status hostname and use the top-right login button. [Google login](admin-login.md) verifies identity directly at the Worker; RP manages allowed accounts and revocable sessions in D1. No public registration or fallback key login is available. The console manages credential lifecycle through a bounded task queue; reporting, provisioning and the control task use separate credentials. Browser sessions use eight-hour Secure, HttpOnly, SameSite=Lax cookies, with only their hashes stored in D1.
 
-The public page shows aggregate CPU usage, memory, disk and one-minute system load. Credential names and traffic are only available through the authenticated management API. Private responses are not cached by CF, the browser or the service worker. Public status keeps its 60-second cache.
+The public page shows aggregate CPU usage, memory and disk usage. Credential names and traffic are only available through the authenticated management API. Private responses are not cached by CF, the browser or the service worker. Public status keeps its 60-second cache.
 
 The reporter persists deltas from Xray's non-resetting counters before upload. Duplicate/retried reports do not add traffic twice; a service restart preserves the accumulated totals. Accounting begins at the first baseline, without inventing earlier usage. Unobserved traffic immediately before a restart can be lost; the admin table marks sampling gaps with `*`. A single interval spanning a UTC month boundary is split proportionally. Totals are proxy payload bytes, not provider-billed NIC traffic.
 

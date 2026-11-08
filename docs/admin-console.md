@@ -1,21 +1,23 @@
 # Admin console
 
-One React/TypeScript/Ant Design project serves two entries:
+One React/TypeScript/Ant Design application serves `/` for both visitors and administrators.
 
-- `/`: anonymous, redacted status and history.
-- `/admin/`: Google-authenticated RP administrators; overview, credentials and activity.
+- Signed out: redacted public status, with a login button in the top right.
+- Signed in as an RP administrator: the same overview layout, with management menus available.
+- Login methods appear in an Ant Design modal. Phase one only supports allowlisted Google administrator accounts; there is no standalone login page.
+- Credential and activity views use `/?view=credentials` and `/?view=activity`. All administrator views and Google login results use the root page; there is no separate administrator route.
 
 Accounts, role checks and sessions belong to the RP server. This release has no ordinary-user page or public registration.
 
 ## Console layout
 
-The console uses a top navigation bar for overview and credential management, with the account menu on the right. Operation history remains available under the credential management tabs and at `/admin/?view=activity`.
+The existing management API is scoped to one node per deployment; this visual refactor does not add cross-node administration. Resource metrics remain directly visible, and status details use tooltips rather than dialogs. Only login and consequential action confirmations use modals. The console uses a top navigation bar for overview and credential management, with the account menu on the right. Credential management has no duplicate page heading; its create button sits at the right of the tabs. Operation history remains available under the credential management tabs and at `/?view=activity`.
 
-The overview reads all history windows from the same public status API as the home page; changing the time range does not issue another request. Status cells share the home page renderer and responsive sizing: 72 samples, 3px gaps and 26px height on desktop; 2px gaps and 24px height at widths up to 820px. Hover, keyboard focus and touch expose the sample period and result. The time axis uses API timestamps.
+The overview reads all history windows from the same public status API as the home page; changing the time range does not issue another request. Status cells share the home page renderer and responsive sizing: 72 samples, 3px gaps and 26px height on desktop; 2px gaps and 24px height at widths up to 820px. Hover, keyboard focus and touch expose the sample period and result. Sample periods use API timestamps.
 
-Connection history reports **peak bands**, not exact historical counts; the current connection count comes from the private console. Entry latency is the latest TCP connection time, not an average. Host metrics show the reported percentages and one-minute load; hardware capacity is not available in this API. Remaining monthly traffic is the public NIC estimate, separate from per-credential payload accounting. Both public and private quota displays use remaining allowance / total allowance and a remaining-percentage bar; less than 25% is amber and less than 10% is red. Invalid or zero allowance, missing data and a mismatched UTC month remain unavailable. Missing or stale values remain unavailable.
+Connection history reports **peak bands**, not exact historical counts. Entry latency is the latest TCP connection time, not an average. CPU, memory, disk and remaining monthly traffic share one metric row, or two columns on smaller screens. The overview omits average load, the update timestamp and the extra private summary row. Hardware capacity is not available in this API. Remaining monthly traffic is the public NIC estimate, separate from per-credential payload accounting. Both public and private quota displays use remaining allowance / total allowance and a remaining-percentage bar; less than 25% is amber and less than 10% is red. Invalid or zero allowance, missing data and a mismatched UTC month remain unavailable. Missing or stale values remain unavailable.
 
-The console, login and public home page share the cool-white/blue-gray theme and abstract R mark. The same vector generates the favicon and PWA launcher icons.
+The anonymous and administrator views share the white/ink theme and double-path mark, with the Route Pilot wordmark. The same vector generates the favicon and PWA launcher icons.
 
 ## Enable
 
@@ -44,8 +46,10 @@ Clash Verge imports `clash.yaml` as a remote profile. Shadowrocket imports its n
 
 ## Runtime
 
-VPS control: every 30 seconds, one operation per run, no inbound listener or web server. The reporting timer remains every 60 seconds. The active admin page polls metadata every 30 seconds, or every 5 seconds while work is pending; hidden tabs pause polling. Public status retains its separate shared cache.
+VPS control: every 30 seconds, one operation per run, no inbound listener or web server. The reporting timer remains every 60 seconds. The authenticated app polls management data every 30 seconds, or every 5 seconds while work is pending; hidden tabs pause polling. Public status retains its separate shared cache.
 
 Private responses use `no-store`. D1 stores token hashes and AES-GCM envelopes, including an encrypted token for administrator retrieval; only explicit retrieval returns URLs. Control jobs and audit records contain no node secrets. Completed jobs and audit events are retained for 90 days. Traffic totals count proxy payload bytes from the first measurement, not provider billing; `*` indicates sampling gaps around restarts.
 
 For diagnostics, inspect `systemctl status routepilot-control.timer routepilot-control.service` and the sanitized service result. Do not print root token files, job result files or subscription bodies. Stopping the timer pauses credential changes without stopping the proxy or monitoring; queued revocations still block downloads until completed. CLI publication is blocked while web management is installed to prevent stale tokens from being restored.
+
+The shared `StatusOverview` renders public data in both session states. Private host metrics are used only for the matching managed instance. Logout and rejected sessions clear private data, forms, subscription drawers and action confirmations. Late responses from an earlier session cannot repopulate the private UI. Public status remains available when the management service is unavailable.

@@ -48,7 +48,7 @@ python3 ops/accounts.py revoke-sessions --email admin@example.com
 
 ## 登录与验收
 
-浏览器发起同源登录请求 → Google 登录 → RP 回调核验 → D1 检查账号 → 设置本站 Cookie → 返回 `/admin/`。OAuth 使用浏览器绑定的一次性 state、nonce 和 PKCE S256；回调原子消费后不能重放。Google ID token 的签名、签发者、受众、时效、nonce 与邮箱验证状态均需通过。
+浏览器发起同源登录请求 → Google 登录 → RP 回调核验 → D1 检查账号 → 设置本站 Cookie → 返回 `/`，在首页展示管理员菜单。OAuth 使用浏览器绑定的一次性 state、nonce 和 PKCE S256；回调原子消费后不能重放。Google ID token 的签名、签发者、受众、时效、nonce 与邮箱验证状态均需通过。
 
 会话最长八小时，Cookie 为 Secure、HttpOnly、SameSite=Lax；D1 仅存会话摘要。每次管理请求重新检查账号启用状态和角色。退出删除服务器会话；浏览器脚本不接触 OAuth 密钥或 Google token，localStorage/sessionStorage 不存登录凭证。
 

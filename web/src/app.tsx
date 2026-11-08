@@ -12,6 +12,8 @@ import {
   Form,
   Input,
   Layout,
+  Menu,
+  Modal,
   Select,
   Skeleton,
   Table,
@@ -29,17 +31,19 @@ import {
   Ellipsis,
   KeyRound,
   LogOut,
+  LogIn,
   Plus,
   Search,
 } from "lucide-react";
 import zhCN from "antd/locale/zh_CN";
 import { theme } from "./theme";
-import { AdminOverview } from "./admin-overview";
+import { StatusOverview } from "./status";
+import type { InitialData } from "./data";
 import type { HostLoad } from "./load";
 import mark from "./assets/routepilot-mark.svg";
 import google from "./assets/google-g.png";
 import "./status.css";
-import "./admin.css";
+import "./app.css";
 
 type Page = "overview" | "credentials" | "activity";
 type Credential = {
@@ -149,16 +153,20 @@ const msg: Record<string, string> = {
   "Publish subscription first": "请先生成订阅地址",
   "Credential limit reached": "已达到凭证数量上限",
 };
-function Brand() {
+function Brand({ onHome }: { onHome: () => void }) {
   return (
-    <a href="/" className="console-brand" aria-label="route-pilot 状态首页">
-      <img src={mark} width={34} height={34} alt="" />
-      <span>route-pilot</span>
+    <a href="/" className="console-brand" aria-label="Route Pilot 状态首页" onClick={event => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      onHome();
+    }}>
+      <img src={mark} width={32} height={32} alt="" />
+      <span>Route Pilot</span>
     </a>
   );
 }
 
-function Admin() {
+function RoutePilotApp({ initial }: { initial: InitialData }) {
   const { message, modal } = AntApp.useApp();
   const [data, setData] = useState<ConsoleData | null>(null),
     [auth, setAuth] = useState<boolean | null>(null),
@@ -179,7 +187,7 @@ function Admin() {
     [copyKey, setCopyKey] = useState("");
   const [revision, setRevision] = useState(0);
   const alive = useRef(true);
-  const [loginError] = useState(() => {
+  const [loginError, setLoginError] = useState(() => {
     const value = new URLSearchParams(location.search).get("login");
     return (
       (
@@ -193,6 +201,19 @@ function Admin() {
       )[value ?? ""] ?? ""
     );
   });
+  const [loginOpen, setLoginOpen] = useState(() => new URLSearchParams(location.search).has("login"));
+  const sessionEpoch = useRef(0);
+  const wasAuthenticated = useRef(false);
+  const confirmation = useRef<ReturnType<typeof modal.confirm> | null>(null);
+  function forgetSession(prompt = false) {
+    sessionEpoch.current++;
+    wasAuthenticated.current = false;
+    setAuth(false); setData(null); setAccess(null); setFormOpen(false); setEditing(null);
+    setSearch(""); setFilter("all"); setCopyKey(""); form.resetFields();
+    confirmation.current?.destroy(); confirmation.current = null;
+    setPage("overview"); history.replaceState(null, "", "/");
+    if (prompt) { setLoginError("登录已过期，请重新登录"); setLoginOpen(true); }
+  }
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -200,82 +221,75 @@ function Admin() {
     };
   }, []);
   useEffect(() => {
-    const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout>;
-    const metadata = () =>
-      fetch("/private/auth", { cache: "no-store", signal: controller.signal })
-        .then(async (r) => {
-          if (!r.ok) throw Error();
-          const d = await r.json();
-          if (d.provider !== "google") throw Error();
-          setReady(d.ready);
-        })
-        .catch(() => {
-          if (!controller.signal.aborted) {
-            setError("暂时无法连接服务");
-            timer = setTimeout(metadata, 15000);
-          }
-        });
-    void metadata();
-    if (new URLSearchParams(location.search).has("login"))
-      history.replaceState(null, "", "/admin/");
+    if (new URLSearchParams(location.search).has("login")) history.replaceState(null, "", "/");
     const pop = () => setPage(pageFromURL());
     addEventListener("popstate", pop);
-    return () => {
-      controller.abort();
-      clearTimeout(timer);
-      removeEventListener("popstate", pop);
-    };
+    return () => removeEventListener("popstate", pop);
   }, []);
   useEffect(() => {
-    let stopped = false,
-      timer: ReturnType<typeof setTimeout>;
+    if (!loginOpen) return;
     const controller = new AbortController();
-    async function load() {
-      if (document.hidden) {
-        timer = setTimeout(load, 10000);
-        return;
-      }
+    let timer: ReturnType<typeof setTimeout>;
+    async function metadata() {
       try {
-        const r = await fetch("/private/console", {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (stopped) return;
-        if (r.status === 401 || r.status === 403) {
-          setAuth(false);
-          setData(null);
-          setAccess(null);
-          setFormOpen(false);
-          return;
-        }
-        if (!r.ok) throw Error();
-        const next = await r.json();
-        if (stopped) return;
-        setData(next);
-        setAuth(true);
-        setError("");
-        timer = setTimeout(
-          load,
-          next.jobs.some((j: Job) => ["queued", "running"].includes(j.state))
-            ? 5000
-            : 30000,
-        );
+        const response = await fetch("/private/auth", { cache: "no-store", signal: controller.signal });
+        if (!response.ok) throw Error();
+        const next = await response.json();
+        if (next.provider !== "google") throw Error();
+        if (!controller.signal.aborted) setReady(next.ready === true);
       } catch {
-        if (!stopped) {
-          setError("暂时无法读取数据，请稍后重试");
-          timer = setTimeout(load, 15000);
+        if (!controller.signal.aborted) {
+          setLoginError("暂时无法连接登录服务，正在重试");
+          timer = setTimeout(metadata, 15000);
         }
       }
     }
+    void metadata();
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [loginOpen]);
+  useEffect(() => {
+    let stopped = false, pending = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const controller = new AbortController();
+    async function load() {
+      if (document.hidden || pending) return;
+      clearTimeout(timer); pending = true;
+      const epoch = sessionEpoch.current;
+      try {
+        const response = await fetch("/private/console", { cache: "no-store", signal: controller.signal });
+        if (stopped || epoch !== sessionEpoch.current) return;
+        if (response.status === 401 || response.status === 403) {
+          const prompt = wasAuthenticated.current;
+          const requestedManagement = pageFromURL() !== "overview";
+          forgetSession(prompt);
+          if (requestedManagement && !prompt) setLoginOpen(true);
+          return;
+        }
+        if (!response.ok) throw Error();
+        const next = await response.json();
+        if (stopped || epoch !== sessionEpoch.current) return;
+        if (next.account?.role !== "admin") { forgetSession(); return; }
+        wasAuthenticated.current = true;
+        setData(next); setAuth(true); setError(""); setLoginOpen(false);
+        timer = setTimeout(load, next.jobs.some((job: Job) => ["queued", "running"].includes(job.state)) ? 5000 : 30000);
+      } catch {
+        if (!stopped && epoch === sessionEpoch.current) {
+          setError("暂时无法读取管理数据，请稍后重试");
+          timer = setTimeout(load, 15000);
+        }
+      } finally { pending = false; }
+    }
     void load();
+    const resume = () => { if (!document.hidden) void load(); };
+    document.addEventListener("visibilitychange", resume);
+    addEventListener("focus", resume);
     return () => {
-      stopped = true;
-      clearTimeout(timer);
-      controller.abort();
+      stopped = true; controller.abort(); clearTimeout(timer);
+      document.removeEventListener("visibilitychange", resume); removeEventListener("focus", resume);
     };
   }, [revision]);
   async function api(path: string, body?: unknown) {
+    const epoch = sessionEpoch.current;
     const r = await fetch(path, {
       method: "POST",
       cache: "no-store",
@@ -283,20 +297,21 @@ function Admin() {
       body: JSON.stringify(body ?? {}),
     });
     if (r.status === 401 || r.status === 403) {
-      setAuth(false);
-      setData(null);
-      setAccess(null);
+      forgetSession(true);
       throw Error("登录已过期，请重新登录");
     }
     const next = await r.json();
+    if (epoch !== sessionEpoch.current) throw Error("登录状态已变化");
     if (!r.ok) throw Error(msg[next.error] ?? "操作未完成，请重试");
     return next;
   }
   async function login() {
     setBusy(true);
-    setError("");
+    setLoginError("");
     try {
-      const r = await api("/private/auth/google/start");
+      const response = await fetch("/private/auth/google/start", { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: "{}" });
+      if (!response.ok) throw Error();
+      const r = await response.json();
       const u = new URL(r.authorizationUrl);
       if (
         u.origin !== "https://accounts.google.com" ||
@@ -305,34 +320,35 @@ function Admin() {
         throw Error();
       location.assign(u.href);
     } catch {
-      setError("暂时无法发起 Google 登录");
+      setLoginError("暂时无法发起 Google 登录，请重试");
       setBusy(false);
     }
   }
   async function logout() {
     setBusy(true);
+    sessionEpoch.current++;
     try {
       const r = await fetch("/private/session", {
         method: "DELETE",
         cache: "no-store",
       });
       if (!r.ok) throw Error();
-      setData(null);
-      setAccess(null);
-      setAuth(false);
-      setRevision((x) => x + 1);
+      forgetSession();
+      setLoginOpen(false);
     } catch {
       message.error("退出失败，请重试");
     } finally {
       setBusy(false);
+      setRevision((x) => x + 1);
     }
   }
   function navigate(value: Page) {
+    if (value === page) return;
     setPage(value);
     history.pushState(
       null,
       "",
-      value === "overview" ? "/admin/" : "/admin/?view=" + value,
+      value === "overview" ? "/" : "/?view=" + value,
     );
   }
   function openForm(row: Credential | null) {
@@ -370,7 +386,7 @@ function Admin() {
         "旧订阅地址将在执行完成后失效，需要在客户端更新订阅地址。已导入的节点仍可连接。",
       publish: "为当前凭证生成客户端订阅，保留已有节点身份。",
     };
-    modal.confirm({
+    confirmation.current = modal.confirm({
       title: actionNames[action],
       content: (
         <>
@@ -444,7 +460,7 @@ function Admin() {
     if (row.download_revoked) return <Tag color="warning">订阅已停用</Tag>;
     return (
       <Badge
-        color={fresh && row.online ? "#159b76" : "#b1bab6"}
+        color={fresh && row.online ? "#348267" : "#aaaaaa"}
         text={
           fresh && row.online
             ? "在线"
@@ -553,49 +569,18 @@ function Admin() {
       ),
     },
   ];
-  if (auth === null)
-    return (
-      <div className="console-boot">
-        <Brand />
-        {error ? (
-          <Alert title={error} type="warning" showIcon />
-        ) : (
-          <Skeleton active paragraph={{ rows: 4 }} />
-        )}
-      </div>
-    );
-  if (auth === false)
-    return (
-      <div className="login-page">
-        <header>
-          <Brand />
-          <a href="/">首页</a>
-        </header>
-        <main className="login-main">
-          <section className="login-panel" aria-label="管理员登录">
-            <div className="login-identity"><Brand /></div>
-            {(error || loginError) && <Alert type="warning" title={error || loginError} showIcon />}
-            {ready === false ? <Alert type="info" title="Google 登录尚未配置" showIcon /> : (
-              <Button block size="large" loading={busy || ready === null} disabled={ready !== true} onClick={login}>
-                <img src={google} width={24} height={24} alt="" />
-                使用 Google 登录
-              </Button>
-            )}
-          </section>
-        </main>
-      </div>
-    );
+  const isAdmin = auth === true && data?.account.role === "admin";
+  const activePage = isAdmin ? page : "overview";
   return (
-    <Layout className="console-layout">
-      <Layout className="console-body">
-        <header className="console-header">
-          <Brand />
-          <nav className="console-navigation" aria-label="管理导航">
-            {([['overview', '运行概览'], ['credentials', '凭证管理']] as const).map(([key, label]) =>
-              <Button key={key} type="text" aria-current={(page === key || (key === 'credentials' && page === 'activity')) ? 'page' : undefined}
-                className={(page === key || (key === 'credentials' && page === 'activity')) ? 'is-active' : ''} onClick={() => navigate(key)}>{label}</Button>)}
-          </nav>
-          <Dropdown
+    <Layout className="site-layout">
+      <Layout className="site-body status-page">
+        <header className="site-header app-header">
+          <Brand onHome={() => navigate("overview")} />
+          {isAdmin && <Menu className="app-navigation" mode="horizontal" aria-label="管理导航"
+            selectedKeys={[activePage === 'activity' ? 'credentials' : activePage]}
+            items={[{key:'overview',label:'首页'},{key:'credentials',label:'凭证管理'}]}
+            onClick={({key}) => navigate(key as Page)} />}
+          {isAdmin ? <Dropdown
             trigger={["click"]}
             menu={{
               items: [
@@ -616,28 +601,12 @@ function Admin() {
               <span className="account-label">管理员</span>
               <ChevronDown size={16} />
             </Button>
-          </Dropdown>
+          </Dropdown> : <Button className="login-button" icon={<LogIn size={16} />} onClick={() => { setLoginError(""); setLoginOpen(true); }}>登录</Button>}
         </header>
-        <main className="console-main">
-          <div className="console-page-heading">
-            <div>
-              <h1>{titles[page]}</h1>
-            </div>
-            {page === "credentials" ? (
-              <Button
-                type="primary"
-                icon={<Plus size={17} />}
-                disabled={!data?.controlReady}
-                onClick={() => openForm(null)}
-              >
-                创建凭证
-              </Button>
-            ) : (
-              <span className="last-updated">
-                更新于 {time(data?.reportedAt ?? null)}
-              </span>
-            )}
-          </div>
+        {isAdmin && error && activePage === 'overview' && <Alert className="overview-alert" type="warning" showIcon title={error} />}
+        <StatusOverview initial={initial} privateNode={isAdmin ? data : null} hidden={activePage !== 'overview'} />
+        {isAdmin && activePage !== 'overview' && <main className="console-main">
+          <h1 className="sr-only">{titles[page]}</h1>
           {error && (
             <Alert
               className="console-alert"
@@ -653,8 +622,9 @@ function Admin() {
             </div>
           ) : (
             <>
-              {page === "overview" && <AdminOverview node={data} revision={revision} refresh={() => setRevision(x => x + 1)} />}
-              {page !== "overview" && <Tabs className="credential-tabs" activeKey={page} onChange={key => navigate(key as Page)} items={[
+              {page !== "overview" && <Tabs className="credential-tabs" activeKey={page} tabBarGutter={24} onChange={key => navigate(key as Page)}
+                tabBarExtraContent={page === 'credentials' ? <Button type="primary" icon={<Plus size={17} />}
+                  disabled={!data.controlReady} onClick={() => openForm(null)}>创建凭证</Button> : null} items={[
                 { key: "credentials", label: "全部凭证" }, { key: "activity", label: "操作记录" },
               ]} />}
               {page === "credentials" && (
@@ -793,17 +763,22 @@ function Admin() {
               )}
             </>
           )}
-        </main>
-        <footer className="console-footer">
-          <span>route-pilot</span>
-          <a href="/">
-            首页
-          </a>
-        </footer>
+        </main>}
       </Layout>
+      <Modal title="登录" open={loginOpen && !isAdmin} onCancel={() => setLoginOpen(false)} footer={null}
+        width={320} centered destroyOnHidden mask={{ closable: !busy }} closable={false} keyboard={!busy}
+        styles={{ header: { textAlign: 'center' } }}>
+        <Flex vertical align="center" gap={20} className="login-options">
+          {loginError && <Alert type="warning" title={loginError} showIcon />}
+          {ready === false ? <Alert type="info" title="Google 登录尚未配置" showIcon /> :
+            <Button shape="circle" size="large" aria-label="使用 Google 登录"
+              icon={<img src={google} width={24} height={24} alt="" />}
+              loading={busy || ready === null} disabled={ready !== true} onClick={login} />}
+        </Flex>
+      </Modal>
       <Drawer
         title={editing ? "修改凭证名称" : "创建凭证"}
-        open={formOpen}
+        open={isAdmin && formOpen}
         onClose={() => !saving && setFormOpen(false)}
         size={440}
         destroyOnHidden
@@ -865,7 +840,7 @@ function Admin() {
       </Drawer>
       <Drawer
         title="订阅地址"
-        open={!!access}
+        open={isAdmin && !!access}
         onClose={() => setAccess(null)}
         size={520}
         destroyOnHidden
@@ -930,10 +905,10 @@ function Admin() {
     </Layout>
   );
 }
-createRoot(document.getElementById("root")!).render(
-  <ConfigProvider theme={theme} locale={zhCN}>
-    <AntApp>
-      <Admin />
-    </AntApp>
-  </ConfigProvider>,
-);
+export function mount(initial: InitialData) {
+  createRoot(document.getElementById("root")!).render(
+    <ConfigProvider theme={theme} locale={zhCN}>
+      <AntApp><RoutePilotApp initial={initial} /></AntApp>
+    </ConfigProvider>,
+  );
+}

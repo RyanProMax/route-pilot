@@ -34,11 +34,11 @@ A credential may intentionally be shared across devices and native client format
 python3 ops/install_control.py --config /private/routepilot/deploy.json
 ```
 
-Open `/admin/` to create credentials, generate or copy subscriptions, rotate download URLs and revoke node access. The root-owned task polls CF every 30 seconds, exits between runs and opens no listening port. Existing locally stored subscription tokens are imported without rotating them. For pre-existing identities, use **生成订阅** once if the console has not yet stored an encrypted retrieval copy. The public `/` page remains anonymous. See [admin console](admin-console.md).
+Sign in from `/` to create credentials, generate or copy subscriptions, rotate download URLs and revoke node access. The root-owned task polls CF every 30 seconds, exits between runs and opens no listening port. Existing locally stored subscription tokens are imported without rotating them. For pre-existing identities, use **生成订阅** once if the console has not yet stored an encrypted retrieval copy. The same `/` page shows redacted status when signed out. See [admin console](admin-console.md).
 
 Production identifiers are generated into temporary deployment staging directories. `cloud/wrangler.json` and `cloud/status-site.json` are reusable templates. The public instance manifest is replaced from the private deployment settings during publication.
 
-Cloudflare runs two Workers: `routepilot-web` serves the status/admin pages and PWA assets; `routepilot-server` handles reporting, status APIs, subscriptions and Google authentication. Their names do not depend on the node location. Set `server_worker` and `web_worker` in private settings for separate installations in the same account. Renaming a live Worker must preserve its immutable Worker ID, secrets, D1 bindings, routes and schedules; do not deploy an empty replacement with a new name.
+Cloudflare runs two Workers: `routepilot-web` serves the unified application and PWA assets; `routepilot-server` handles reporting, status APIs, subscriptions and Google authentication. Their names do not depend on the node location. Set `server_worker` and `web_worker` in private settings for separate installations in the same account. Renaming a live Worker must preserve its immutable Worker ID, secrets, D1 bindings, routes and schedules; do not deploy an empty replacement with a new name.
 
 ## Measurements
 

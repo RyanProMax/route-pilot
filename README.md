@@ -1,12 +1,18 @@
-# route-pilot
+# Route Pilot
 
 自建固定 IPv4 出口，从 VPS 部署、安全加固到客户端配置与状态监控。
+
+[在线示例](https://vps.trendbeak.com/) · [部署指南](docs/deployment.md) · [Google 登录配置](docs/admin-login.md)
+
+[![Route Pilot 墨白界面：多节点状态、资源与流量指标、稳定性历史](docs/images/route-pilot-preview.jpg)](https://vps.trendbeak.com/)
+
+示例站公开展示脱敏节点状态；管理功能仅向已授权的 Google 管理员开放。宣传图使用示例数据。
 
 - **部署 Skill**：由 Agent 编排 VLESS / REALITY 部署、IPv4 / IPv6 直连诊断、SSH 端口迁移、fail2ban 和回滚。
 - **私有订阅**：Clash Verge、Shadowrocket 通过 HTTPS 更新配置；独立随机令牌、加密存储、按凭证撤销。
 - **独立监控**：VPS 每分钟自检上报，Cloudflare 外部探测，D1 保存历史，无需 Mac 常驻。
 - **状态页**：React + TypeScript + Ant Design，支持 PWA、多实例切换、流量余额及 24 小时 / 7 天 / 30 天记录。
-- **管理后台**：Google 登录、主机负载、凭证创建/撤销、订阅地址重置、月度用量和操作记录。公开首页与后台共用一个前端项目。
+- **管理功能**：Google 登录、主机资源、凭证创建/撤销、订阅地址重置、月度用量和操作记录。访客和管理员共用首页，登录后展示管理菜单。
 
 ```text
 Agent + Skill ── SSH ── VPS ── 固定 IPv4 出口
@@ -32,6 +38,14 @@ npm --prefix web ci --include=optional
 公开页面仅展示聚合状态，不含节点凭证、客户端 IP 或设备名称。Cloudflare 探测代表其所在网络的连通性；直连仍需在实际客户端验收。
 
 ## 开发验证
+
+启动仓库的实际前端和本地 Worker / D1：
+
+```sh
+npm --prefix web run dev
+```
+
+打开 `http://127.0.0.1:5173/`。前端支持热更新；本地空库自动迁移，数据保存在 `cloud/.wrangler/local-d1/`。首次启动没有监控数据，Google 管理员登录未配置。此命令不连接线上数据库或 VPS。
 
 ```sh
 python3 -m unittest discover -s tests -v
