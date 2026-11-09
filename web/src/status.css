@@ -176,3 +176,5 @@ h2 { font-size: 20px; font-weight: 550; letter-spacing: -.02em; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+.snapshot-note { color: var(--rp-text-muted, #7a858e); font-size: 12px; line-height: 1.5; margin: -4px 0 16px; }

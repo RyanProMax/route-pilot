@@ -39,6 +39,7 @@ import zhCN from "antd/locale/zh_CN";
 import { theme } from "./theme";
 import { StatusOverview } from "./status";
 import type { InitialData } from "./data";
+import { pollVisible } from "./polling";
 import type { HostLoad } from "./load";
 import mark from "./assets/routepilot-mark.svg";
 import google from "./assets/google-g.png";
@@ -186,6 +187,7 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
     } | null>(null),
     [copyKey, setCopyKey] = useState("");
   const [revision, setRevision] = useState(0);
+  const [now, setNow] = useState(() => Date.now() / 1000);
   const alive = useRef(true);
   const [loginError, setLoginError] = useState(() => {
     const value = new URLSearchParams(location.search).get("login");
@@ -214,6 +216,17 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
     setPage("overview"); history.replaceState(null, "", "/");
     if (prompt) { setLoginError("登录已过期，请重新登录"); setLoginOpen(true); }
   }
+  useEffect(() => {
+    const update = () => setNow(Date.now() / 1000);
+    const timer = setInterval(update, 15_000);
+    window.addEventListener('online', update); window.addEventListener('offline', update);
+    document.addEventListener('visibilitychange', update);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('online', update); window.removeEventListener('offline', update);
+      document.removeEventListener('visibilitychange', update);
+    };
+  }, []);
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -247,47 +260,25 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
     void metadata();
     return () => { controller.abort(); clearTimeout(timer); };
   }, [loginOpen]);
-  useEffect(() => {
-    let stopped = false, pending = false;
-    let timer: ReturnType<typeof setTimeout>;
-    const controller = new AbortController();
-    async function load() {
-      if (document.hidden || pending) return;
-      clearTimeout(timer); pending = true;
-      const epoch = sessionEpoch.current;
-      try {
-        const response = await fetch("/private/console", { cache: "no-store", signal: controller.signal });
-        if (stopped || epoch !== sessionEpoch.current) return;
-        if (response.status === 401 || response.status === 403) {
-          const prompt = wasAuthenticated.current;
-          const requestedManagement = pageFromURL() !== "overview";
-          forgetSession(prompt);
-          if (requestedManagement && !prompt) setLoginOpen(true);
-          return;
-        }
-        if (!response.ok) throw Error();
-        const next = await response.json();
-        if (stopped || epoch !== sessionEpoch.current) return;
-        if (next.account?.role !== "admin") { forgetSession(); return; }
-        wasAuthenticated.current = true;
-        setData(next); setAuth(true); setError(""); setLoginOpen(false);
-        timer = setTimeout(load, next.jobs.some((job: Job) => ["queued", "running"].includes(job.state)) ? 5000 : 30000);
-      } catch {
-        if (!stopped && epoch === sessionEpoch.current) {
-          setError("暂时无法读取管理数据，请稍后重试");
-          timer = setTimeout(load, 15000);
-        }
-      } finally { pending = false; }
+  useEffect(() => pollVisible(async signal => {
+    const epoch = sessionEpoch.current;
+    const response = await fetch("/private/console", { cache: "no-store", signal });
+    if (signal.aborted || epoch !== sessionEpoch.current) return false;
+    if (response.status === 401 || response.status === 403) {
+      const prompt = wasAuthenticated.current;
+      const requestedManagement = pageFromURL() !== "overview";
+      forgetSession(prompt);
+      if (requestedManagement && !prompt) setLoginOpen(true);
+      return false;
     }
-    void load();
-    const resume = () => { if (!document.hidden) void load(); };
-    document.addEventListener("visibilitychange", resume);
-    addEventListener("focus", resume);
-    return () => {
-      stopped = true; controller.abort(); clearTimeout(timer);
-      document.removeEventListener("visibilitychange", resume); removeEventListener("focus", resume);
-    };
-  }, [revision]);
+    if (!response.ok) throw Error();
+    const next = await response.json();
+    if (signal.aborted || epoch !== sessionEpoch.current) return false;
+    if (next.account?.role !== "admin") { forgetSession(); return false; }
+    wasAuthenticated.current = true;
+    setData(next); setAuth(true); setError(""); setLoginOpen(false);
+    return next.jobs.some((job: Job) => ["queued", "running"].includes(job.state)) ? 5000 : 30000;
+  }, { onError: () => setError("暂时无法读取管理数据，请稍后重试") }), [revision]);
   async function api(path: string, body?: unknown) {
     const epoch = sessionEpoch.current;
     const r = await fetch(path, {
@@ -436,9 +427,9 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
     }
   }
   const fresh =
-      !!data?.reportedAt && Date.now() / 1000 - data.reportedAt <= 150,
+      !!data?.reportedAt && data.at - data.reportedAt <= 150,
     controlFresh =
-      !!data?.controlSeen && Date.now() / 1000 - data.controlSeen <= 150;
+      !!data?.controlSeen && data.at - data.controlSeen <= 150;
   const jobFor = (id: string) => data?.jobs.find((j) => j.device_id === id);
   const pending = (id: string) =>
     ["queued", "running"].includes(jobFor(id)?.state ?? "");
@@ -603,18 +594,10 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
             </Button>
           </Dropdown> : <Button className="login-button" icon={<LogIn size={16} />} onClick={() => { setLoginError(""); setLoginOpen(true); }}>登录</Button>}
         </header>
-        {isAdmin && error && activePage === 'overview' && <Alert className="overview-alert" type="warning" showIcon title={error} />}
         <StatusOverview initial={initial} privateNode={isAdmin ? data : null} hidden={activePage !== 'overview'} />
         {isAdmin && activePage !== 'overview' && <main className="console-main">
           <h1 className="sr-only">{titles[page]}</h1>
-          {error && (
-            <Alert
-              className="console-alert"
-              title={error}
-              type="warning"
-              showIcon
-            />
-          )}
+          {data && (error || !navigator.onLine || now - data.at > 150) && <div className="snapshot-note" role="status">上次数据 · {time(data.at)}</div>}
           {!data ? (
             <div className="console-loading">
               <Skeleton active paragraph={{ rows: 3 }} />
