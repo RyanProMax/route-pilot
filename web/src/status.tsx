@@ -6,7 +6,8 @@ import { Card } from './beui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './beui/tabs';
 import { useEffect, useRef, useState } from 'react';
 import type { TableColumnsType } from 'antd';
-import { readInstances, readStatus } from './data';
+import { cachedStatus, readInstances, readStatus } from './data';
+import { pollVisible } from './polling';
 import { remainingTraffic } from './traffic';
 import type { InitialData, Item, Range, State, StatusBundle } from './data';
 import { HostMetrics, MetricCard } from './load';
@@ -22,7 +23,7 @@ const unpublishedLink: Item = { id: 'link', at: null, status: 'unknown', rate: n
 const number = (value: number) => value.toLocaleString('zh-CN');
 
 export type PrivateNode = {
-  instance: { id: string; name: string }; reportedAt: number | null; freshFor?: number;
+  instance: { id: string; name: string }; at: number; reportedAt: number | null; freshFor?: number;
   load: HostLoad | null;
 };
 
@@ -32,6 +33,7 @@ export function StatusOverview({ initial, privateNode, hidden }: {
   const [instances, setInstances] = useState(initial.instances);
   const [instanceId, setInstanceId] = useState<string | null>(initial.instances[0]?.id ?? null);
   const [instanceError, setInstanceError] = useState(initial.instanceError);
+  const [catalogPending, setCatalogPending] = useState(initial.instanceError || !initial.completedAt);
   const [range, setRange] = useState<Range>('24h');
   const [bundle, setBundle] = useState<StatusBundle | null>(initial.bundle);
   const data = bundle?.instanceId === instanceId ? bundle.windows[range] : null;
@@ -53,79 +55,28 @@ export function StatusOverview({ initial, privateNode, hidden }: {
   }, []);
 
   useEffect(() => {
-    if (!instanceError || !online) return;
-    const controller = new AbortController();
-    let pending = false;
-    let timer: number | undefined;
-    async function loadInstances() {
-      if (pending || timer !== undefined || document.hidden) return;
-      pending = true;
-      try {
-        const entries = await readInstances(controller.signal);
-        if (!controller.signal.aborted) {
-          setInstances(entries);
-          setInstanceId(entries[0].id);
-          setInstanceError(false);
-        }
-      } catch {
-        if (!controller.signal.aborted) schedule(60_000);
-      } finally {
-        pending = false;
-      }
-    }
-    function schedule(delay: number) {
-      timer = window.setTimeout(() => { timer = undefined; void loadInstances(); }, delay);
-    }
-    schedule(Math.max(0, 60_000 - (Date.now() - initial.completedAt)));
-    document.addEventListener('visibilitychange', loadInstances);
-    return () => {
-      controller.abort();
-      clearTimeout(timer);
-      document.removeEventListener('visibilitychange', loadInstances);
-    };
-  }, [instanceError, initial.completedAt, online]);
+    if (!catalogPending) return;
+    return pollVisible(async signal => {
+      const entries = await readInstances(signal);
+      if (signal.aborted) return;
+      setInstances(entries);
+      setInstanceId(current => entries.some(entry => entry.id === current) ? current : entries[0].id);
+      setInstanceError(false); setCatalogPending(false);
+      return false;
+    }, { onError: () => setInstanceError(true) });
+  }, [catalogPending]);
 
   useEffect(() => {
-    if (!instanceId || !online) return;
-    const controller = new AbortController();
-    let pending = false;
-    let timer: number | undefined;
-
-    async function load() {
-      if (pending || timer !== undefined || document.hidden) return;
-      pending = true;
-      try {
-        const next = await readStatus(instanceId!, controller.signal);
-        if (!controller.signal.aborted) {
-          setBundle(next);
-          setError(false);
-          setNow(Date.now() / 1000);
-        }
-      } catch {
-        if (!controller.signal.aborted) setError(true);
-      } finally {
-        pending = false;
-        if (!controller.signal.aborted) {
-          schedule(60_000);
-        }
-      }
-    }
-
-    function schedule(delay: number) {
-      timer = window.setTimeout(() => { timer = undefined; void load(); }, delay);
-    }
-    // The bootstrap already fetched this instance while the UI code was downloading.
-    if (initialPoll.current.id === instanceId) {
-      schedule(Math.max(0, 60_000 - (Date.now() - initialPoll.current.completedAt)));
-      initialPoll.current.id = undefined;
-    } else void load();
-    document.addEventListener('visibilitychange', load);
-    return () => {
-      controller.abort();
-      clearTimeout(timer);
-      document.removeEventListener('visibilitychange', load);
-    };
-  }, [instanceId, online]);
+    if (!instanceId) return;
+    const initialDelay = initialPoll.current.id === instanceId && initial.completedAt && !initial.error
+      ? Math.max(0, 60_000 - (Date.now() - initialPoll.current.completedAt)) : 0;
+    initialPoll.current.id = undefined;
+    return pollVisible(async signal => {
+      const next = await readStatus(instanceId, signal);
+      if (signal.aborted) return;
+      setBundle(next); setError(false); setNow(Date.now() / 1000);
+    }, { initialDelay, onError: () => setError(true) });
+  }, [instanceId]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now() / 1000), 15_000);
@@ -134,16 +85,19 @@ export function StatusOverview({ initial, privateNode, hidden }: {
 
   const loading = !data && !error && !instanceError && online;
 
-  const expired = !measurementFresh(data?.at, now, data?.freshFor);
+  const stale = Boolean(data && (!online || !measurementFresh(data.at, now) || error));
   const checks = data?.checks ?? [];
   const rows = data && !checks.some(item => item.id === 'link') ? [...checks, unpublishedLink] : checks;
   const currentState = (item: Item): State =>
-    !online || expired || error || !measurementFresh(item.at, now, item.freshFor) ? 'unknown' : item.status;
-  const traffic = remainingTraffic(data?.traffic, Boolean(online && !error && !expired && measurementFresh(data?.lastReport, now, data?.freshFor)), now);
+    data && measurementFresh(item.at, data.at, item.freshFor) ? item.status : 'unknown';
+  const reportFresh = Boolean(data && measurementFresh(data.lastReport, data.at, data.freshFor));
+  const traffic = remainingTraffic(data?.traffic, reportFresh, now);
   const remaining = traffic?.percent ?? null;
   const quotaColor = traffic?.level && traffic.level !== 'ok' ? states[traffic.level].color : undefined;
   const managedNode = privateNode?.instance.id === instanceId ? privateNode : null;
-  const privateFresh = online && measurementFresh(managedNode?.reportedAt, now, managedNode?.freshFor);
+  const privateFresh = managedNode && measurementFresh(managedNode.reportedAt, managedNode.at, managedNode.freshFor);
+  const publicLoad = reportFresh ? data?.load : null;
+  const load = privateFresh && managedNode.at > (data?.at ?? 0) ? managedNode.load : publicLoad;
 
   const columns: TableColumnsType<Item> = [
     {
@@ -152,7 +106,7 @@ export function StatusOverview({ initial, privateNode, hidden }: {
       width: 152,
       className: 'check-name',
       render: (_, item) => <span className="check-label">
-        <Badge color={states[currentState(item)].color} role="img" aria-label={'当前状态：' + states[currentState(item)].label} />
+        <Badge color={states[currentState(item)].color} role="img" aria-label={(stale ? '上次状态：' : '当前状态：') + states[currentState(item)].label} />
         <span>{labels[item.id]}</span>
       </span>,
     },
@@ -198,19 +152,22 @@ export function StatusOverview({ initial, privateNode, hidden }: {
             <InstanceNavigation instances={instances} value={instanceId} onChange={value => {
               if (value !== instanceId) {
                 setInstanceId(value);
-                setBundle(null);
+                setBundle(cachedStatus(value));
                 setError(false);
                 setActiveTooltip(null);
               }
             }} />
           </section>
 
-          {!online && <Alert type="warning" title="设备已离线，联网后自动恢复" showIcon className="status-alert" />}
-          {online && instanceError && <Alert type="warning" title="暂时无法读取实例列表" showIcon className="status-alert" />}
-          {online && error && <Alert type="warning" title="读取失败，正在自动重试" showIcon className="status-alert" />}
-          {online && data && expired && !error && <Alert type="warning" title="数据已过期，等待更新" showIcon className="status-alert" />}
+          {!data && (!online || instanceError || error) && <Alert type="warning"
+            title={!online ? '设备已离线，联网后自动恢复' : '暂时无法读取数据，正在自动重试'}
+            showIcon className="status-alert" />}
+          {stale && data && <div className="snapshot-note" role="status"
+            title="保留上次成功读取的数据，恢复连接后自动更新；并非实时状态">
+            上次数据 · <time dateTime={new Date(data.at * 1000).toISOString()}>{displayTime(data.at)}</time>
+          </div>}
 
-          <HostMetrics load={managedNode ? privateFresh ? managedNode.load : null : !online || error || expired ? null : data?.load}>
+          <HostMetrics load={load}>
             <MetricCard label="本月剩余流量" icon={ArrowLeftRight} iconColor="var(--icon-traffic)" percent={remaining} color={quotaColor}
               value={<span className="traffic-amount">{traffic ? <>
                 <span><small>约 </small>{number(traffic.remainingGB)}<small> GB</small></span>
