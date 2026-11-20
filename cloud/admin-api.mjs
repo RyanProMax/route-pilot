@@ -1,3 +1,5 @@
+import { latestAggregate } from './aggregate.mjs';
+import { macProbeSummaries } from './mac-probe.mjs';
 import { authenticatedAccount, digest, privateHeaders } from "./auth.mjs";
 const json = (value, status = 200) =>
   Response.json(value, { status, headers: privateHeaders });
@@ -276,8 +278,10 @@ export async function adminAPI(request, env, now, helpers) {
         "SELECT at,action,device_id,outcome FROM admin_events ORDER BY id DESC LIMIT 100",
       ),
     ]);
-    const last = results[2].results[0],
-      metrics = last ? JSON.parse(last.metrics) : {};
+    let last = results[2].results[0];
+    const aggregate=await latestAggregate(db,'vps');
+    if(aggregate?.last && (!last || aggregate.last.ts>last.ts))last={ts:aggregate.last.ts,metrics:JSON.stringify(aggregate.last.metrics),freshFor:1500};
+    const metrics = last ? JSON.parse(last.metrics) : {};
     return json({
       at: now,
       month,
@@ -287,10 +291,12 @@ export async function adminAPI(request, env, now, helpers) {
         name: env.INSTANCE_NAME ?? env.INSTANCE_ID,
         country: env.INSTANCE_COUNTRY ?? "",
       },
+      macProbes: await macProbeSummaries(db, now),
       reportedAt: last?.ts ?? null,
+      freshFor:last?.freshFor??150,
       serviceHealthy:
-        !!last && now - last.ts <= 150 && metrics.proxy_service === "active",
-      load: hostLoad(metrics, last?.ts, now),
+        !!last && now - last.ts <= (last.freshFor??150) && metrics.proxy_service === "active",
+      load: hostLoad(metrics, last?.ts, now,last?.freshFor??150),
       connections: Number.isSafeInteger(metrics.connections)
         ? metrics.connections
         : null,
@@ -301,7 +307,7 @@ export async function adminAPI(request, env, now, helpers) {
         revoked: !!r.revoked,
         has_subscription: !!r.has_subscription,
         download_revoked: !!r.download_revoked,
-        online: r.at && now - r.at <= 150 ? !!r.online : null,
+        online: r.at && now - r.at <= (last?.freshFor??150) ? !!r.online : null,
       })),
       jobs: results[1].results.map((r) => ({
         ...r,

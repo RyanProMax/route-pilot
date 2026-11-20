@@ -1,0 +1,16 @@
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "./beui";
+
+@theme inline {
+  --color-primary: var(--rp-tab-active);
+  --color-primary-foreground: #fff;
+  --color-foreground: var(--rp-ink);
+  --color-card-foreground: var(--rp-ink);
+  --color-muted-foreground: var(--rp-muted);
+  --color-card: var(--rp-selected);
+  --color-background: var(--rp-surface);
+  --color-border: var(--rp-line);
+  --color-ring: var(--rp-accent);
+}

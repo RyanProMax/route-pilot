@@ -37,6 +37,8 @@ def load_config(path=None):
     if c.get('bootstrap_admin_email'):
         if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', c['bootstrap_admin_email']) or len(c['bootstrap_admin_email'])>254:
             raise ValueError('Invalid bootstrap administrator email')
+    if 'aggregate_start' in c and (type(c['aggregate_start']) is not int or c['aggregate_start'] < 0 or c['aggregate_start'] % 1200):
+        raise ValueError('Aggregation start must align to a UTC 20-minute boundary')
     return c
 
 def cloud_configs(c):
@@ -53,5 +55,7 @@ def cloud_configs(c):
         'database_id':c['database']['id'],'migrations_dir':'migrations'}]
     worker['vars'] = {'INSTANCE_ID':i['id'],'INSTANCE_NAME':i['name'],'INSTANCE_COUNTRY':i['country'],'IPV4':i['ipv4'],'IPV6':i.get('ipv6',''),
         'PORT':str(i['port']),'PLAN_BANDWIDTH_GB':str(i['bandwidth_gb']), 'APP_ORIGIN':'https://'+host}
+    if c.get('aggregate_start'):
+        worker['vars']['AGGREGATE_START'] = str(c['aggregate_start'])
     site.update(name=c.get('web_worker','routepilot-web'),account_id=c['account_id'],routes=[{'pattern':host+'/*','zone_name':zone}])
     return worker, site

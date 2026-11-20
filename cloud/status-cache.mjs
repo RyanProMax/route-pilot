@@ -3,7 +3,7 @@ import { publicSummaries, publicSummary, windows } from "./public-status.mjs";
 const paths = new Map(Object.keys(windows).map(window => ["/status/" + window + ".json", window]));
 
 // Cloudflare checks its tiered cache before invoking this handler. Only these public GETs are cacheable.
-export async function readStatus(request, db, now, planGB, instanceId = "node-1") {
+export async function readStatus(request, db, now, planGB, instanceId = "node-1", legacyEntries = false) {
   const url = new URL(request.url);
   const prefix = "/status/" + instanceId + "/";
   const path = url.pathname.startsWith(prefix) ? "/status/" + url.pathname.slice(prefix.length) : url.pathname;
@@ -17,10 +17,10 @@ export async function readStatus(request, db, now, planGB, instanceId = "node-1"
 
   try {
     const data = all
-      ? { instanceId, windows: await publicSummaries(db, Object.keys(windows), now, planGB) }
-      : { instanceId, ...await publicSummary(db, window, now, planGB) };
-    // Keep the five-check contract for pages loaded before instance-specific routes.
-    if (!url.pathname.startsWith(prefix)) data.checks = data.checks.filter(check => check.id !== "connections");
+      ? { instanceId, windows: await publicSummaries(db, Object.keys(windows), now, planGB, legacyEntries) }
+      : { instanceId, ...await publicSummary(db, window, now, planGB, legacyEntries) };
+    // Older clients predate both connection counts and link quality.
+    if (!url.pathname.startsWith(prefix)) data.checks = data.checks.filter(check => !["connections", "link"].includes(check.id));
     const body = request.method === "HEAD" ? null : JSON.stringify(data);
     return new Response(body, {headers:{
       "Content-Type":"application/json; charset=utf-8",

@@ -1,4 +1,5 @@
-import { connect } from "cloudflare:sockets";
+import { normalizeWindows, aggregateStatements, lastWindow, validateWindowSequence, latestAggregate, invalidateAggregateCache } from './aggregate.mjs';
+import { ingestMacProbe } from './mac-probe.mjs';
 import { readStatus } from "./status-cache.mjs";
 import { privateAPI, usageStatements } from "./private-api.mjs";
 
@@ -69,8 +70,40 @@ async function ingest(request,env) {
     if (size>550000) {await reader.cancel();return response({error:"Too large"},413);}
     raw+=decoder.decode(value,{stream:true});
   }
+  let input;
+  try {input=JSON.parse(raw+decoder.decode());} catch {return response({error:"Invalid JSON"},400);}
+  if(input?.schema===2){
+    const now=clock();
+    if(!Number.isSafeInteger(input.ts)||Math.abs(now-input.ts)>120)return response({error:"Invalid timestamp"},400);
+    if(input.ackOnly===true)return response({accepted:true,last_window:await lastWindow(env.DB,'vps')});
+    let windows,aggregateUsage=[];
+    try {
+      if(input.usage!==undefined&&Number.isSafeInteger(input.usage_ts)&&input.usage_ts<=now+15&&now-input.usage_ts<=1500)aggregateUsage=usageStatements(env.DB,input.usage,input.usage_ts);
+      windows=normalizeWindows(input.windows,'vps',now);
+      for(const w of windows){
+        if(w.last!==null){
+          if(!Number.isSafeInteger(w.last.ts)||w.last.ts<w.start||w.last.ts>=w.start+1200)throw Error('last');
+          const report=normalizeReport(w.last,w.last.ts);
+          const good=report.metrics.proxy_service==='active'&&report.metrics.security.public_tcp_ports.includes(Number(env.PORT));
+          w.last={ts:report.ts,metrics:report.metrics,checks:[{id:'heartbeat',status:'ok',latency:null},{id:'xray',status:good?'ok':'down',latency:null}]};
+
+        }
+      }
+      await validateWindowSequence(env.DB,'vps',windows,now);
+    } catch {return response({error:'Invalid aggregate'},400);}
+    const prior=await lastWindow(env.DB,'vps');
+    const fresh=windows.filter(w=>prior===null||w.start>prior);
+    if(fresh.length){
+      const actual=request.headers.get('cf-connecting-ip')||'';
+      fresh.at(-1).observedEgress={ts:now,status:!actual?'unknown':actual===env.IPV4?'ok':'down'};
+      // Usage is cumulative accounting, not minute history. Persist only the latest actual snapshot.
+      await env.DB.batch([...aggregateStatements(env.DB,'vps',fresh),...aggregateUsage]);
+      invalidateAggregateCache(env.DB,'vps');
+    }
+    return response({accepted:true,last_window:await lastWindow(env.DB,'vps')});
+  }
   let report;
-  try {report=normalizeReport(JSON.parse(raw+decoder.decode()),clock());}
+  try {report=normalizeReport(input,clock());}
   catch {return response({error:"Invalid or expired sample"},400);}
   const {ts,metrics}=report;
   let usage;
@@ -88,6 +121,7 @@ async function ingest(request,env) {
   return response({accepted:true});
 }
 async function probe(env,id,address,time) {
+  const { connect } = await import('cloudflare:sockets');
   let socket,timer;
   const before=Date.now();
   try {
@@ -105,14 +139,19 @@ async function probe(env,id,address,time) {
   }
 }
 async function observe(env,now) {
-  const statements=await Promise.all([probe(env,"edge4",env.IPV4,now),env.IPV6 ? probe(env,"edge6",env.IPV6,now) : sample(env,"edge6",now,"unknown","未配置 IPv6 入口")]);
+  if(Number(env.AGGREGATE_START)>0&&now>=Number(env.AGGREGATE_START))return;
   const last=await env.DB.prepare("SELECT ts FROM reports ORDER BY minute DESC LIMIT 1").first();
+  const aggregate=await latestAggregate(env.DB,'vps');
+  // Aggregated sources expire at read time. Never fabricate minute samples while offline.
+  if(aggregate && (!last || aggregate.start>=last.ts))return;
+  const statements=await Promise.all([probe(env,"edge4",env.IPV4,now),env.IPV6 ? probe(env,"edge6",env.IPV6,now) : sample(env,"edge6",now,"unknown","未配置 IPv6 入口")]);
   if (last && now-last.ts>staleAfter) statements.push(sample(env,"heartbeat",now-60,"unknown","超过 150 秒未收到 VPS 自检"));
   await env.DB.batch(statements);
 }
 async function prune(env,now) {
   const cutoff=now-31*86400;
-  await env.DB.batch(["DELETE FROM samples WHERE ts<?","DELETE FROM reports WHERE minute<?","DELETE FROM events WHERE ts<?","DELETE FROM buckets WHERE bucket+width<?","DELETE FROM connection_buckets WHERE bucket+width<?"].map((sql,i)=>env.DB.prepare(sql).bind(i===1?Math.floor(cutoff/60):cutoff)));
+  await env.DB.prepare("DELETE FROM aggregate_windows WHERE start+1200<?").bind(cutoff).run();
+  await env.DB.batch(["DELETE FROM samples WHERE ts<?","DELETE FROM reports WHERE minute<?","DELETE FROM events WHERE ts<?","DELETE FROM buckets WHERE bucket+width<?","DELETE FROM connection_buckets WHERE bucket+width<?","DELETE FROM link_packet_buckets WHERE bucket+width<?"].map((sql,i)=>env.DB.prepare(sql).bind(i===1?Math.floor(cutoff/60):cutoff)));
   await env.DB.batch([env.DB.prepare("DELETE FROM control_jobs WHERE state IN ('done','failed') AND finished<?").bind(now-90*86400),
     env.DB.prepare('DELETE FROM admin_events WHERE at<?').bind(now-90*86400),env.DB.prepare('DELETE FROM rp_sessions WHERE expires<?').bind(now),
     env.DB.prepare('DELETE FROM oauth_attempts WHERE expires<?').bind(now),
@@ -121,6 +160,7 @@ async function prune(env,now) {
 export default {
   async fetch(request,env) {
     const url=new URL(request.url);
+    if (url.pathname === "/private/mac-probe-ingest" && request.method === "POST" && url.protocol === "https:") return ingestMacProbe(request,env,clock());
     if (url.pathname.startsWith('/private/') || url.pathname.startsWith('/sub/')) {
       try {return await privateAPI(request,env,clock());}
       catch {return response({error:'Unavailable'},503);}
@@ -131,7 +171,9 @@ export default {
       return new Response(null, {status:308, headers:{Location:url.toString(), "Cache-Control":"no-store"}});
     }
     if (url.pathname.startsWith("/status/")) {
-      const status = await readStatus(request, env.DB, clock(), Number(env.PLAN_BANDWIDTH_GB), env.INSTANCE_ID);
+      const now = clock();
+      const legacyEntries = !(Number(env.AGGREGATE_START) > 0 && now >= Number(env.AGGREGATE_START));
+      const status = await readStatus(request, env.DB, now, Number(env.PLAN_BANDWIDTH_GB), env.INSTANCE_ID, legacyEntries);
       if (status) return status;
     }
     if (request.method === "POST" && (url.pathname === "/api/report" || /^\/i\/[a-f0-9]{64}$/.test(url.pathname))) {

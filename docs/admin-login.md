@@ -15,6 +15,21 @@ Google 验证身份，RP 在 D1 管理账号、权限与会话。Worker 直接�
    必须与部署域名完全一致，不加尾部斜杠。当前服务端跳转方案无需填写 Authorized JavaScript origins。
 6. 创建后下载 OAuth 客户端 JSON，存到仓库外，将权限设为 `600`。密钥不发到聊天，不提交 Git。已有客户端修改回调后，重新下载 JSON。
 
+## 本地开发登录
+
+只想体验后台时，在 `web/.env.local` 中设置 `ROUTEPILOT_DEV_LOCAL_LOGIN=1` 并重启开发服务。首页点击“登录 → 使用本地开发账号登录”。会话、账号与操作仅写入独立的本机演示库 `cloud/.wrangler/demo-d1/`，退出和刷新使用正常的会话校验。该入口只在本机开发服务器启用。配置 Google 客户端后优先使用 Google 登录。
+
+默认开发服务位于 `http://127.0.0.1:5173/`。需要测试真实 Google 登录时，在开发用 Google Web 客户端中注册 `https://127.0.0.1:5173/private/auth/google/callback`，并将测试账号加入 Google 测试用户。把以下设置放入已忽略的 `web/.env.local`，再运行 `npm --prefix web run dev`。
+
+```dotenv
+ROUTEPILOT_DEV_GOOGLE_CLIENT_FILE=/private/dev/google-web-client.json
+ROUTEPILOT_DEV_ADMIN_EMAIL=developer@example.com
+ROUTEPILOT_DEV_TLS_CERT=/private/dev/loopback-cert.pem
+ROUTEPILOT_DEV_TLS_KEY=/private/dev/loopback-key.pem
+```
+
+证书应覆盖 `127.0.0.1` 并受本机浏览器信任。文件路径指向仓库外的开发凭据。配置后打开 `https://127.0.0.1:5173/`。本地 Worker 使用正常的 Google 登录流程，会话和管理员名单写入本地 D1。已有账号的禁用状态和身份绑定会保留。
+
 ## 保存到 Worker
 
 推荐由 Agent 导入私有 JSON：

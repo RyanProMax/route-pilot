@@ -8,13 +8,14 @@ export const labels = {
   egress: '固定出口',
   edge4: 'IPv4 入口',
   edge6: 'IPv6 入口',
+  link: '链路质量',
   connections: '节点连接数',
 } as const;
 export const states = {
-  ok: { label: '健康', color: '#348267' },
-  degraded: { label: '缓慢', color: '#a77c25' },
-  down: { label: '异常', color: '#bf6057' },
-  unknown: { label: '无数据', color: '#dddddd' },
+  ok: { label: '健康', color: 'var(--rp-ok)' },
+  degraded: { label: '缓慢', color: 'var(--rp-warning)' },
+  down: { label: '异常', color: 'var(--rp-down)' },
+  unknown: { label: '无数据', color: 'var(--rp-unknown)' },
 } as const;
 export const windows = { '24h': '24 小时', '7d': '7 天', '30d': '30 天' };
 const tooltipTrigger: ('hover' | 'focus' | 'click')[] =
@@ -46,8 +47,12 @@ export function HistoryBars({ item, data, instanceId, activeTooltip, setActiveTo
             const tooltipId = instanceId + '-' + item.id + '-' + start;
             const count = item.values?.[index] ?? null;
             const credentials = item.deviceHistory?.[index] ?? null;
+            const interval = item.intervals?.[index];
+            const latency = interval?.meanLatency == null ? '暂无数据' : interval.meanLatency + ' ms';
+            const replyRate = interval?.replyRate == null ? '未采集' : Number(interval.replyRate.toFixed(2)) + '%';
             const hasConnections = item.id === 'connections' && count !== null;
-            const label = hasConnections
+            const isLink = item.id === 'link';
+            const label = isLink ? '平均延时 ' + latency + '，探测应答率 ' + replyRate : hasConnections
               ? (credentials !== null ? credentials + ' 个凭证，' : '') + count + ' 条连接'
               : states[status].label;
             const height = item.id === 'connections' && count !== null
@@ -58,7 +63,10 @@ export function HistoryBars({ item, data, instanceId, activeTooltip, setActiveTo
                 key={start}
                 title={
                   <Flex vertical gap={6} className="history-tooltip">
-                    {hasConnections ? <Flex align="center" gap={8}>
+                    {isLink ? <dl className="link-interval-metrics">
+                      <dt>平均延时</dt><dd>{latency}</dd>
+                      <dt>探测应答率</dt><dd>{replyRate}</dd>
+                    </dl> : hasConnections ? <Flex align="center" gap={8}>
                       <Badge color={states[status].color} role="img" aria-label={states[status].label} />
                       <Flex align="center" gap={12} className="history-tooltip-metrics">
                         {credentials !== null && <Typography.Text><Typography.Text strong>{credentials}</Typography.Text> <Typography.Text type="secondary">个凭证</Typography.Text></Typography.Text>}

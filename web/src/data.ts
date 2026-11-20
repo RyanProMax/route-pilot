@@ -1,16 +1,16 @@
 export type State = 'ok' | 'degraded' | 'down' | 'unknown';
-export type Key = 'heartbeat' | 'service' | 'egress' | 'edge4' | 'edge6' | 'connections';
+export type Key = 'heartbeat' | 'service' | 'egress' | 'edge4' | 'edge6' | 'link' | 'connections';
 export const ranges = ['24h', '7d', '30d'] as const;
 export type Range = typeof ranges[number];
 export type Instance = { id: string; name: string; country?: string };
 export type Item = {
   id: Key; status: State; at: number | null; latency: number | null; rate: number | null;
-  history: State[]; value?: string | null; values?: (string | null)[];
+  freshFor?: number; intervals?: ({ meanLatency: number | null; replyRate: number | null } | null)[]; history: State[]; value?: string | null; values?: (string | null)[];
   devices?: number | null; deviceHistory?: (number | null)[];
 };
 export type Summary = {
   load?: import('./load').HostLoad | null;
-  at: number; start: number; width: number; lastReport: number | null;
+  at: number; start: number; width: number; freshFor?: number; lastReport: number | null;
   traffic?: { month: string; remainingGB: number; planGB: number } | null;
   checks: Item[]; events: { id: Key; status: State; at: number }[];
 };

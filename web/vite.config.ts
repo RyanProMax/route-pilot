@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { createCache, extractStyle, StyleProvider } from '@ant-design/cssinjs';
@@ -8,7 +9,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
-  plugins: [react(), {
+  plugins: [react(), tailwindcss(), {
     name: 'status-loading-shell',
     transformIndexHtml(html, context) {
       const cache = createCache();
@@ -34,7 +35,7 @@ export default defineConfig({
       id: '/', name: 'Route Pilot', short_name: 'Route Pilot', lang: 'zh-CN',
       description: '节点服务状态与稳定性记录',
       start_url: '/', scope: '/', display: 'standalone',
-      theme_color: '#ffffff', background_color: '#ffffff',
+      theme_color: '#000000', background_color: '#000000',
       icons: [
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -45,7 +46,7 @@ export default defineConfig({
       cacheId: 'routepilot-static',
       skipWaiting: true,
       clientsClaim: true,
-      globPatterns: ['offline.html', 'offline.js', 'icons/*.png'],
+      globPatterns: ['offline.html', 'offline.js', 'appearance.js', 'icons/*.png'],
       cleanupOutdatedCaches: true,
       navigateFallback: null,
       // Only document navigations get an offline fallback. Do not cache status or instance data.

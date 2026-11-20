@@ -1,7 +1,6 @@
 import {
   Alert,
   App as AntApp,
-  Avatar,
   Badge,
   Button,
   ConfigProvider,
@@ -17,16 +16,14 @@ import {
   Select,
   Skeleton,
   Table,
-  Tabs,
   Tag,
   Tooltip,
 } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Check,
   ChevronDown,
-  UserRound,
   Copy,
   Ellipsis,
   KeyRound,
@@ -34,9 +31,12 @@ import {
   LogIn,
   Plus,
   Search,
+  Moon,
+  Sun,
 } from "lucide-react";
 import zhCN from "antd/locale/zh_CN";
-import { theme } from "./theme";
+import { componentTheme } from "./theme";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./beui/tabs";
 import { StatusOverview } from "./status";
 import type { InitialData } from "./data";
 import type { HostLoad } from "./load";
@@ -166,7 +166,7 @@ function Brand({ onHome }: { onHome: () => void }) {
   );
 }
 
-function RoutePilotApp({ initial }: { initial: InitialData }) {
+function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; light: boolean; toggleTheme: () => void }) {
   const { message, modal } = AntApp.useApp();
   const [data, setData] = useState<ConsoleData | null>(null),
     [auth, setAuth] = useState<boolean | null>(null),
@@ -207,9 +207,10 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
   const confirmation = useRef<ReturnType<typeof modal.confirm> | null>(null);
   function forgetSession(prompt = false) {
     sessionEpoch.current++;
+    if (wasAuthenticated.current && formOpen) form.resetFields();
     wasAuthenticated.current = false;
     setAuth(false); setData(null); setAccess(null); setFormOpen(false); setEditing(null);
-    setSearch(""); setFilter("all"); setCopyKey(""); form.resetFields();
+    setSearch(""); setFilter("all"); setCopyKey("");
     confirmation.current?.destroy(); confirmation.current = null;
     setPage("overview"); history.replaceState(null, "", "/");
     if (prompt) { setLoginError("登录已过期，请重新登录"); setLoginOpen(true); }
@@ -323,6 +324,17 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
       setLoginError("暂时无法发起 Google 登录，请重试");
       setBusy(false);
     }
+  }
+  async function loginLocally() {
+    setBusy(true);
+    setLoginError("");
+    try {
+      const response = await fetch("/__dev/session", { method: "POST", cache: "no-store" });
+      if (!response.ok) throw Error();
+      setRevision(value => value + 1);
+    } catch {
+      setLoginError("本地登录失败，请重试");
+    } finally { setBusy(false); }
   }
   async function logout() {
     setBusy(true);
@@ -460,7 +472,7 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
     if (row.download_revoked) return <Tag color="warning">订阅已停用</Tag>;
     return (
       <Badge
-        color={fresh && row.online ? "#348267" : "#aaaaaa"}
+        color={fresh && row.online ? "var(--rp-ok)" : "var(--rp-unknown)"}
         text={
           fresh && row.online
             ? "在线"
@@ -580,6 +592,10 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
             selectedKeys={[activePage === 'activity' ? 'credentials' : activePage]}
             items={[{key:'overview',label:'首页'},{key:'credentials',label:'凭证管理'}]}
             onClick={({key}) => navigate(key as Page)} />}
+          <div className="header-actions">
+          <Button shape="circle" type="text" className="theme-button" onClick={toggleTheme}
+            aria-label={light ? "切换到深色主题" : "切换到浅色主题"} title={light ? "切换到深色主题" : "切换到浅色主题"}
+            icon={light ? <Moon size={17} /> : <Sun size={18} />} />
           {isAdmin ? <Dropdown
             trigger={["click"]}
             menu={{
@@ -595,18 +611,16 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
             }}
           >
             <Button type="text" className="account-button" aria-label="用户菜单" loading={busy}>
-              <Avatar size={28} className="account-avatar">
-                <UserRound size={18} />
-              </Avatar>
-              <span className="account-label">管理员</span>
-              <ChevronDown size={16} />
+              <span>管理员</span>
+              <ChevronDown size={13} strokeWidth={1.65} aria-hidden="true" />
             </Button>
           </Dropdown> : <Button className="login-button" icon={<LogIn size={16} />} onClick={() => { setLoginError(""); setLoginOpen(true); }}>登录</Button>}
+          </div>
         </header>
         {isAdmin && error && activePage === 'overview' && <Alert className="overview-alert" type="warning" showIcon title={error} />}
         <StatusOverview initial={initial} privateNode={isAdmin ? data : null} hidden={activePage !== 'overview'} />
         {isAdmin && activePage !== 'overview' && <main className="console-main">
-          <h1 className="sr-only">{titles[page]}</h1>
+          <h1>{titles[page]}</h1>
           {error && (
             <Alert
               className="console-alert"
@@ -621,13 +635,16 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
               <Skeleton active paragraph={{ rows: 6 }} />
             </div>
           ) : (
-            <>
-              {page !== "overview" && <Tabs className="credential-tabs" activeKey={page} tabBarGutter={24} onChange={key => navigate(key as Page)}
-                tabBarExtraContent={page === 'credentials' ? <Button type="primary" icon={<Plus size={17} />}
-                  disabled={!data.controlReady} onClick={() => openForm(null)}>创建凭证</Button> : null} items={[
-                { key: "credentials", label: "全部凭证" }, { key: "activity", label: "操作记录" },
-              ]} />}
-              {page === "credentials" && (
+            <Tabs value={page} onValueChange={key => navigate(key as Page)}>
+              <div className="credential-tabs">
+                <TabsList wrapperClassName="pill-group" className="pill-list" aria-label="凭证视图">
+                  <TabsTrigger value="credentials">全部凭证</TabsTrigger>
+                  <TabsTrigger value="activity">操作记录</TabsTrigger>
+                </TabsList>
+                {page === 'credentials' && <Button type="primary" icon={<Plus size={17} />}
+                  disabled={!data.controlReady} onClick={() => openForm(null)}>创建凭证</Button>}
+              </div>
+              <TabsContent value="credentials">{page === "credentials" && (
                 <section className="console-panel credentials-panel">
                   {!controlFresh && (
                     <Alert
@@ -677,8 +694,8 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
                     }}
                   />
                 </section>
-              )}
-              {page === "activity" && (
+              )}</TabsContent>
+              <TabsContent value="activity">{page === "activity" && (
                 <section className="console-panel activity-panel">
                   <Table<Job>
                     rowKey="id"
@@ -760,8 +777,8 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
                     }}
                   />
                 </section>
-              )}
-            </>
+              )}</TabsContent>
+            </Tabs>
           )}
         </main>}
       </Layout>
@@ -770,7 +787,9 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
         styles={{ header: { textAlign: 'center' } }}>
         <Flex vertical align="center" gap={20} className="login-options">
           {loginError && <Alert type="warning" title={loginError} showIcon />}
-          {ready === false ? <Alert type="info" title="Google 登录尚未配置" showIcon /> :
+          {ready === false && import.meta.env.DEV && import.meta.env.ROUTEPILOT_LOCAL_LOGIN ?
+            <Button onClick={loginLocally} loading={busy}>使用本地开发账号登录</Button> :
+            ready === false ? <Alert type="info" title="Google 登录尚未配置" showIcon /> :
             <Button shape="circle" size="large" aria-label="使用 Google 登录"
               icon={<img src={google} width={24} height={24} alt="" />}
               loading={busy || ready === null} disabled={ready !== true} onClick={login} />}
@@ -905,10 +924,20 @@ function RoutePilotApp({ initial }: { initial: InitialData }) {
     </Layout>
   );
 }
+function ThemedApp({ initial }: { initial: InitialData }) {
+  const [light, setLight] = useState(document.documentElement.dataset.theme === 'light');
+  const theme = useMemo(() => componentTheme(light), [light]);
+  function toggleTheme() {
+    const next = light ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('routepilot-theme', next); } catch { /* Storage is optional. */ }
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'light' ? '#ffffff' : '#000000');
+    setLight(!light);
+  }
+  return <ConfigProvider theme={theme} locale={zhCN}>
+      <AntApp><RoutePilotApp initial={initial} light={light} toggleTheme={toggleTheme} /></AntApp>
+    </ConfigProvider>;
+}
 export function mount(initial: InitialData) {
-  createRoot(document.getElementById("root")!).render(
-    <ConfigProvider theme={theme} locale={zhCN}>
-      <AntApp><RoutePilotApp initial={initial} /></AntApp>
-    </ConfigProvider>,
-  );
+  createRoot(document.getElementById("root")!).render(<ThemedApp initial={initial} />);
 }

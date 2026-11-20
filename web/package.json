@@ -13,16 +13,21 @@
   },
   "dependencies": {
     "antd": "6.7.0",
+    "clsx": "2.1.1",
     "lucide-react": "1.68.0",
+    "motion": "14.14.0",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "tailwind-merge": "3.7.1"
   },
   "devDependencies": {
     "@ant-design/cssinjs": "2.1.2",
     "@resvg/resvg-js": "2.6.2",
+    "@tailwindcss/vite": "4.3.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "6.2.1",
+    "tailwindcss": "4.3.5",
     "typescript": "7.0.2",
     "vite": "8.3.5",
     "vite-plugin-pwa": "2.0.0"

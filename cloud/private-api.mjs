@@ -1,3 +1,4 @@
+import { latestAggregate } from './aggregate.mjs';
 import {authAPI, authenticatedAccount, digest, privateHeaders} from './auth.mjs';
 import {adminAPI} from './admin-api.mjs';
 export {digest} from './auth.mjs';
@@ -68,9 +69,12 @@ export async function privateAPI(request, env, now) {
     const [usage, latest] = await env.DB.batch([
       env.DB.prepare('SELECT id,label,revoked,online,uplink,downlink,since,at,gaps FROM credential_usage WHERE month=? ORDER BY revoked,label').bind(month),
       env.DB.prepare('SELECT ts,metrics FROM reports ORDER BY minute DESC LIMIT 1')]);
-    const last = latest.results[0], metrics = last ? JSON.parse(last.metrics) : {};
-    return json({at:now,month,reportedAt:last?.ts ?? null,load:hostLoad(metrics,last?.ts,now),
-      credentials:usage.results.map(row=>({...row,online:now-row.at<=150 ? !!row.online : null,revoked:!!row.revoked}))});
+    let last = latest.results[0];
+    const aggregate=await latestAggregate(env.DB,'vps');
+    if(aggregate?.last && (!last || aggregate.last.ts>last.ts))last={ts:aggregate.last.ts,metrics:JSON.stringify(aggregate.last.metrics),freshFor:1500};
+    const metrics = last ? JSON.parse(last.metrics) : {};
+    return json({at:now,month,freshFor:last?.freshFor??150,reportedAt:last?.ts ?? null,load:hostLoad(metrics,last?.ts,now,last?.freshFor??150),
+      credentials:usage.results.map(row=>({...row,online:now-row.at<=(last?.freshFor??150) ? !!row.online : null,revoked:!!row.revoked}))});
   }
   if (path.startsWith('/private/manage/')) {
     const header = request.headers.get('authorization') ?? '';
@@ -99,8 +103,8 @@ export async function privateAPI(request, env, now) {
   }
   return json({error:'Not found'},404);
 }
-export function hostLoad(metrics, ts, now) {
-  if (!Number.isFinite(ts) || now-ts>150) return null;
+export function hostLoad(metrics, ts, now, freshFor=150) {
+  if (!Number.isFinite(ts) || now-ts>freshFor) return null;
   const percent = (used,total) => Number.isFinite(used) && Number.isFinite(total) && total>0 && used>=0 && used<=total ? Math.round(used/total*1000)/10 : null;
   return {cpu:Number.isFinite(metrics.cpu_percent) && metrics.cpu_percent>=0 && metrics.cpu_percent<=100 ? metrics.cpu_percent : null,
     memory:percent(metrics.memory_used,metrics.memory_total), disk:percent(metrics.disk_used,metrics.disk_total),

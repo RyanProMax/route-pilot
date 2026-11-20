@@ -4,7 +4,9 @@ export function database() {
   const sql=new DatabaseSync(':memory:');
   for(const name of ['0004_private_control.sql','0005_google_accounts.sql','0006_admin_console.sql'])
     sql.exec(readFileSync(new URL('../cloud/migrations/'+name,import.meta.url),'utf8'));
-  sql.exec('CREATE TABLE reports(minute INTEGER,ts INTEGER,metrics TEXT)');
+  sql.exec(readFileSync(new URL('../cloud/migrations/0001_monitor.sql',import.meta.url),'utf8'));
+  sql.exec(readFileSync(new URL('../cloud/migrations/0008_twenty_minute_aggregation.sql',import.meta.url),'utf8'));
+  sql.exec(readFileSync(new URL('../cloud/migrations/0009_link_packet_buckets.sql',import.meta.url),'utf8'));
   const DB={prepare(query){let args=[];return {
     bind(...a){args=a;return this;},async first(){return sql.prepare(query).get(...args)??null;},
     async run(){return sql.prepare(query).run(...args);},async all(){return {results:sql.prepare(query).all(...args)};},

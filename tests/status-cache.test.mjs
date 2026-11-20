@@ -15,16 +15,16 @@ test("only canonical public reads can query D1 and enter the shared cache", asyn
     assert.match(reply.headers.get("Cache-Control"),/public, max-age=60, s-maxage=60/);
     const body=await reply.json();
     assert.equal(body.at,1000);
-    assert.equal(body.checks.length,5);
+    assert.equal(body.checks.length,3);
   }
   assert.equal((await get("/status/24h.json?bust=5")).status,400);
   assert.equal((await get("/status/24h.json","POST")).status,405);
   assert.equal(await get("/status/custom.json"),null);
-  assert.equal(reads,3);
+  assert.equal(reads,9);
   const primary=await get("/status/node-1/7d.json");
   const body=await primary.json();
   assert.equal(body.instanceId,"node-1");
-  assert.equal(body.checks.length,6);
+  assert.equal(body.checks.length,5);
   const before=reads;
   assert.equal(await get("/status/another-instance/7d.json"),null);
   assert.equal(reads,before);
@@ -36,7 +36,7 @@ test("only canonical public reads can query D1 and enter the shared cache", asyn
   const bundle=await bundleReply.json();
   assert.equal(bundle.instanceId,"node-1");
   assert.deepEqual(Object.keys(bundle.windows),["24h","7d","30d"]);
-  assert(Object.values(bundle.windows).every(summary=>summary.at===1000 && summary.checks.length===6));
+  assert(Object.values(bundle.windows).every(summary=>summary.at===1000 && summary.checks.length===5));
   assert.equal(reads,beforeBundle+1);
   assert.equal((await get("/status/node-1/all.json?bust=5")).status,400);
   assert.equal((await get("/status/node-1/all.json","POST")).status,405);

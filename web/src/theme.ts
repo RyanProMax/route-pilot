@@ -1,19 +1,31 @@
-import type { ThemeConfig } from 'antd';
-export const theme: ThemeConfig = {
-  token: {
-    colorPrimary: '#262626', colorText: '#262626', colorTextSecondary: '#666666',
-    colorSuccess: '#348267', colorWarning: '#a77c25', colorError: '#bf6057', colorInfo: '#666666',
-    colorSuccessBg: '#f0f7f3', colorSuccessBgHover: '#e3f0e9', colorSuccessBorder: '#dcebe2', colorSuccessBorderHover: '#aacdbb',
-    colorSuccessText: '#286b51', colorSuccessTextHover: '#348267', colorSuccessTextActive: '#20563f',
-    colorInfoBg: '#f5f5f5', colorInfoBorder: '#e8e8e8',
-    colorBorder: '#dddddd', colorBorderSecondary: '#e8e8e8', colorBgLayout: '#ffffff',
-    colorBgContainer: '#ffffff', borderRadius: 6, fontSize: 14, controlHeight: 44,
-    fontFamily: 'Manrope, "PingFang SC", "Microsoft YaHei", sans-serif',
-  },
-  components: {
-    Button: { primaryShadow: 'none', defaultShadow: 'none' },
-    Table: { headerBg: 'transparent', headerColor: '#666666', headerSplitColor: 'transparent', cellPaddingBlock: 20, cellPaddingInline: 16, rowHoverBg: '#f7f7f7' },
-    Tooltip: { colorBgSpotlight: '#fff', colorTextLightSolid: '#262626' },
-    Radio: { buttonBg: '#f5f5f5', buttonColor: '#666666', buttonSolidCheckedBg: '#262626', buttonSolidCheckedHoverBg: '#404040', buttonSolidCheckedActiveBg: '#181818', buttonSolidCheckedColor: '#fff' },
-  },
-};
+import { theme as antTheme, type ThemeConfig } from 'antd';
+
+export function componentTheme(light: boolean): ThemeConfig {
+  const style = getComputedStyle(document.documentElement);
+  const color = (name: string) => style.getPropertyValue('--rp-' + name).trim();
+  return {
+    algorithm: light ? antTheme.defaultAlgorithm : antTheme.darkAlgorithm,
+    token: {
+      colorPrimary: color('accent'), colorInfo: color('accent'), colorLink: color('accent'),
+      colorSuccess: color('ok'), colorWarning: color('warning'), colorError: color('down'),
+      colorText: color('ink'), colorTextSecondary: color('muted'),
+      colorBgBase: color('canvas'), colorBgLayout: color('canvas'),
+      colorBgContainer: color('surface'), colorBgElevated: color('elevated'),
+      colorBorder: color('line'), colorBorderSecondary: color('line'),
+      borderRadius: 10, borderRadiusLG: 18, controlHeight: 40, fontSize: 14,
+      fontFamily: 'Manrope, "PingFang SC", "Microsoft YaHei", sans-serif',
+    },
+    components: {
+      Button: {
+        colorPrimary: color('action'), colorPrimaryHover: '#404040', colorPrimaryActive: '#181818',
+        primaryColor: '#fff', primaryShadow: light ? 'none' : 'inset 0 0 0 1px #686868',
+        defaultHoverColor: color('ink'), defaultHoverBorderColor: color('muted'),
+        defaultActiveColor: color('ink'), defaultActiveBorderColor: color('accent'), defaultShadow: 'none',
+      },
+      Menu: { itemBg: 'transparent', horizontalItemSelectedBg: '#000', horizontalItemSelectedColor: '#fff' },
+      Table: { headerBg: 'transparent', headerColor: color('muted'), headerSplitColor: 'transparent',
+        cellPaddingBlock: 16, cellPaddingInline: 16, rowHoverBg: color('selected') },
+      Tooltip: { colorBgSpotlight: color('elevated'), colorTextLightSolid: color('ink') },
+    },
+  };
+}

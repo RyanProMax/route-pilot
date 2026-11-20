@@ -12,7 +12,7 @@
 
 - **部署 Skill**：由 Agent 编排 VLESS / REALITY 部署、IPv4 / IPv6 直连诊断、SSH 端口迁移、fail2ban 和回滚。
 - **私有订阅**：Clash Verge、Shadowrocket 通过 HTTPS 更新配置；独立随机令牌、加密存储、按凭证撤销。
-- **独立监控**：VPS 每分钟自检上报，Cloudflare 外部探测，D1 保存历史，无需 Mac 常驻。
+- **独立监控**：VPS 自检与 Mac 探针独立采样，D1 保存历史。首页的链路质量展示 Mac 所在网络到节点的 TCP 延迟和探测成功率。
 - **状态页**：React + TypeScript + Ant Design，支持 PWA、多实例切换、流量余额及 24 小时 / 7 天 / 30 天记录。
 - **管理功能**：Google 登录、主机资源、凭证创建/撤销、订阅地址重置、月度用量和操作记录。访客和管理员共用首页，登录后展示管理菜单。
 
@@ -20,7 +20,7 @@
 Agent + Skill ── SSH ── VPS ── 固定 IPv4 出口
                     └─ 加密配置 ── CF 私有订阅 ── Clash Verge / Shadowrocket
 
-VPS 自检 + Cloudflare 探测 ── Worker + D1 ── 缓存 API ── 公开状态页
+VPS 自检 + 链路探测 ── Worker + D1 ── 缓存 API ── 公开状态页
 管理员后台 ── 私有任务队列 ── VPS 定时领取并执行
 ```
 
@@ -47,7 +47,7 @@ npm --prefix web ci --include=optional
 npm --prefix web run dev
 ```
 
-打开 `http://127.0.0.1:5173/`。前端支持热更新；本地空库自动迁移，数据保存在 `cloud/.wrangler/local-d1/`。首次启动没有监控数据，Google 管理员登录未配置。此命令不连接线上数据库或 VPS。
+打开 `http://127.0.0.1:5173/`。前端支持热更新；本地空库自动迁移，数据保存在 `cloud/.wrangler/local-d1/`。首次启动没有监控数据。后台可启用本地开发账号，也可配置[本地 Google 管理员登录](docs/admin-login.md#本地开发登录)。此命令不连接线上数据库或 VPS。
 
 ```sh
 python3 -m unittest discover -s tests -v

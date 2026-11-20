@@ -12,7 +12,9 @@ test("public summaries omit operational fields, arbitrary messages and unexpecte
     sql.prepare("INSERT INTO reports VALUES(?,?,?,?)").run(1, 100, JSON.stringify({connections: 33, security: seed, month_tx_bytes:4_123_456_789}), seed);
     sql.exec(readFileSync(new URL("../cloud/migrations/0002_connection_history.sql", import.meta.url), "utf8"));
     sql.exec(readFileSync(new URL("../cloud/migrations/0003_device_history.sql", import.meta.url), "utf8"));
-    for (const id of ["heartbeat", "xray", "egress", "edge4", "edge6", seed]) {
+    sql.exec(readFileSync(new URL("../cloud/migrations/0008_twenty_minute_aggregation.sql", import.meta.url), "utf8"));
+    sql.exec(readFileSync(new URL("../cloud/migrations/0009_link_packet_buckets.sql", import.meta.url), "utf8"));
+    for (const id of ["heartbeat", "xray", "egress", "edge4", "edge6", "link", seed]) {
       sql.prepare("INSERT INTO samples VALUES(?,?,?,?,?,?)").run(id, 1, 100, "down", null, seed);
     }
     const db = {
@@ -24,9 +26,9 @@ test("public summaries omit operational fields, arbitrary messages and unexpecte
       assert.equal(status.connections,"<50");
       assert.deepEqual(status.traffic,{month:"1970-01",planGB:1024,remainingGB:1020});
       assert(!JSON.stringify(status).includes("4123456789"));
-      assert.equal(status.events.length,5);
-      assert.equal(status.checks.length,6);
-      assert(status.checks.slice(0,5).every(c=>c.history.length===72 && c.status==="down"));
+      assert.equal(status.events.length,3);
+      assert.equal(status.checks.length,5);
+      assert(status.checks.slice(0,3).every(c=>c.history.length===72 && c.status==="down"));
       const count = status.checks.find(c=>c.id==="connections");
       assert.equal(count.value,"<50");
       assert.equal(count.values.at(-1),"<50");
@@ -35,6 +37,8 @@ test("public summaries omit operational fields, arbitrary messages and unexpecte
       assert(!JSON.stringify(status).includes(seed));
       assert(!JSON.stringify(status).includes("xray"));
     }
+    const legacy=await publicSummary(db,"24h",120,1024,true);
+    assert.deepEqual(legacy.checks.map(c=>c.id),["heartbeat","service","egress","edge4","edge6","link","connections"]);
     const stale=await publicSummary(db,"24h",300,1024);
     assert.equal(stale.traffic,null);
     assert.equal(stale.connections,null);
@@ -63,7 +67,7 @@ test("public summaries omit operational fields, arbitrary messages and unexpecte
 test("one batched read preserves all three resolutions, event windows and redaction", async () => {
   const sql = new DatabaseSync(":memory:");
   try {
-    for (const migration of ["0001_monitor", "0002_connection_history", "0003_device_history"]) {
+    for (const migration of ["0001_monitor", "0002_connection_history", "0003_device_history", "0008_twenty_minute_aggregation","0009_link_packet_buckets"]) {
       sql.exec(readFileSync(new URL(`../cloud/migrations/${migration}.sql`, import.meta.url), "utf8"));
     }
     const now = Date.UTC(2026, 10, 5, 12) / 1000;
@@ -84,8 +88,8 @@ test("one batched read preserves all three resolutions, event windows and redact
       }
     };
     const all = await publicSummaries(db, Object.keys(windows), now, 1024);
-    assert.equal(batches, 1);
-    assert.equal(queries, 9); // Current readings and report are shared, not fetched three times.
+    assert.equal(batches, 3);
+    assert.equal(queries, 11); // Current readings and report are shared, not fetched three times.
     for (const [range, width] of Object.entries(windows)) {
       assert.deepEqual(all[range], await publicSummary(db, range, now, 1024));
       assert.equal(all[range].width, width);
@@ -103,4 +107,36 @@ test("one batched read preserves all three resolutions, event windows and redact
     const stale = await publicSummaries(db, Object.keys(windows), now + 300, 1024);
     assert(Object.values(stale).every(summary => summary.traffic === null && summary.checks.every(check => check.status === 'unknown')));
   } finally {sql.close();}
+});
+
+test('entry window statistics use measured samples, preserve old status and exclude failed duration', async () => {
+  const sql = new DatabaseSync(':memory:');
+  try {
+    for (const name of ['0001_monitor', '0002_connection_history', '0003_device_history','0008_twenty_minute_aggregation','0009_link_packet_buckets']) sql.exec(readFileSync(new URL(`../cloud/migrations/${name}.sql`, import.meta.url), 'utf8'));
+    for (const [ts, status, latency] of [[60,'ok',2000],[120,'degraded',1000],[180,'down',null],[240,'unknown',null]]) {
+      sql.prepare('INSERT INTO samples VALUES(?,?,?,?,?,?)').run('heartbeat',ts/60,ts,status,latency,'test');
+    }
+    const db = {
+      prepare(query) { return {query,args:[],bind(...args) {this.args=args;return this;}}; },
+      batch(queries) { return queries.map(({query,args})=>({results:sql.prepare(query).all(...args)})); }
+    };
+    const c=(await publicSummary(db,'24h',250,1024)).checks.find(c=>c.id==='heartbeat');
+    assert.equal(c.meanLatency,1500); assert.equal(c.samples,3);
+    assert.equal(c.failedSamples,1); assert.equal(c.slowSamples,1);
+    assert.equal(c.rate,200/3); assert.equal(c.status,'unknown');
+    assert.equal(c.latency,null);
+    const empty=(await publicSummary(db,'24h',250,1024)).checks.find(c=>c.id==='egress');
+    assert.equal(empty.meanLatency,null); assert.equal(empty.rate,null); assert.equal(empty.samples,0);
+  } finally { sql.close(); }
+});
+
+test('public link quality omits per-family checks and raw reports',async()=>{
+ const sql=new DatabaseSync(':memory:');
+ try{
+ for(const name of ['0001_monitor','0002_connection_history','0003_device_history','0008_twenty_minute_aggregation','0009_link_packet_buckets'])sql.exec(readFileSync(new URL(`../cloud/migrations/${name}.sql`,import.meta.url),'utf8'));
+ sql.prepare('INSERT INTO samples VALUES(?,?,?,?,?,?)').run('mac6',16,1000,'down',null,'home-private');
+ const db={prepare(query){return {query,args:[],bind(...args){this.args=args;return this;}};},batch(q){return q.map(({query,args})=>({results:sql.prepare(query).all(...args)}));}};
+ const s=JSON.stringify(await publicSummary(db,'24h',1001,1024));
+ assert(!s.includes('mac6'));assert(!s.includes('home-private'));
+ }finally{sql.close();}
 });
