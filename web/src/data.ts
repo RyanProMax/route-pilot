@@ -3,9 +3,10 @@ export type Key = 'heartbeat' | 'service' | 'egress' | 'edge4' | 'edge6' | 'link
 export const ranges = ['24h', '7d', '30d'] as const;
 export type Range = typeof ranges[number];
 export type Instance = { id: string; name: string; country?: string };
+type PingCounts = { sent: number; received: number };
 export type Item = {
   id: Key; status: State; at: number | null; latency: number | null; rate: number | null;
-  freshFor?: number; intervals?: ({ meanLatency: number | null; replyRate: number | null; ipv6ReplyRate?: number | null } | null)[]; history: State[]; value?: string | null; values?: (string | null)[];
+  freshFor?: number; intervals?: ({ meanLatency: number | null; replyRate: number | null; ipv6ReplyRate?: number | null; ping?: PingCounts } | null)[]; history: State[]; value?: string | null; values?: (string | null)[];
   devices?: number | null; deviceHistory?: (number | null)[];
 };
 export type Summary = {
@@ -64,6 +65,10 @@ const widths: Record<Range, number> = { '24h': 1200, '7d': 8400, '30d': 36000 };
 const keys: Key[] = ['heartbeat', 'service', 'egress', 'edge4', 'edge6', 'link', 'connections'];
 const timestamp = (value: number) => Number.isFinite(value) && value >= 0 && value <= Date.now() / 1000 + 300;
 const nullableNumber = (value: number | null) => value === null || Number.isFinite(value);
+function validPing(counts?: PingCounts) {
+  return counts === undefined || !!counts && Number.isSafeInteger(counts.sent) && counts.sent > 0 &&
+    Number.isSafeInteger(counts.received) && counts.received >= 0 && counts.received <= counts.sent;
+}
 function validStatus(next: StatusBundle, instanceId: string) {
   return !!next && next.instanceId === instanceId && ranges.every(key => {
     const summary = next.windows?.[key];
@@ -76,7 +81,7 @@ function validStatus(next: StatusBundle, instanceId: string) {
         nullableNumber(item.latency) && nullableNumber(item.rate) &&
         (!item.intervals || Array.isArray(item.intervals) && item.intervals.length <= 72 &&
           item.intervals.every(interval => interval === null ||
-            interval && nullableNumber(interval.meanLatency) && [interval.replyRate, interval.ipv6ReplyRate].every(
+            interval && validPing(interval.ping) && nullableNumber(interval.meanLatency) && [interval.replyRate, interval.ipv6ReplyRate].every(
               rate => rate == null || Number.isFinite(rate) && rate >= 0 && rate <= 100))) &&
         Array.isArray(item.history) && item.history.length <= 72 && item.history.every(state => states.includes(state)) &&
         (!item.values || Array.isArray(item.values) && item.values.every(value => value === null || typeof value === 'string')) &&

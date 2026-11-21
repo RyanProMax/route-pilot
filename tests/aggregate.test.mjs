@@ -110,14 +110,16 @@ test('interval metrics weight measured TCP timings and ICMP packets across old a
     const views=await macProbeSummaries(DB,3601);
     const daily=views['24h'].checks[0].intervals;
     assert.deepEqual(daily.slice(-4), [
-      {meanLatency:170,replyRate:0,ipv6ReplyRate:0}, {meanLatency:100,replyRate:90,ipv6ReplyRate:null},
-      {meanLatency:170,replyRate:null,ipv6ReplyRate:100}, null,
+      {meanLatency:170,replyRate:0,ipv6ReplyRate:0,ping:{sent:3,received:0}},
+      {meanLatency:100,replyRate:90,ipv6ReplyRate:null,ping:{sent:30,received:27}},
+      {meanLatency:170,replyRate:null,ipv6ReplyRate:100,ping:{sent:6,received:6}}, null,
     ]);
     for (const range of ['7d','30d']) {
       const interval=views[range].checks[0].intervals.at(-1);
       assert.equal(interval.meanLatency,Math.round((170+2000+3400)/41));
       assert.equal(interval.replyRate,100*27/33);
       assert.equal(interval.ipv6ReplyRate,100*6/9);
+      assert.deepEqual(interval.ping,{sent:9,received:6});
     }
   } finally { sql.close(); }
 });

@@ -5,7 +5,7 @@ import { tcpStatus } from './probe-policy.mjs';
 export function normalizeMacProbe(input, now) {
   if (input?.schema !== 1 || input.path !== 'physical-interface' || input.protocol !== 'tcp-connect' ||
       !Number.isSafeInteger(input.ts) || input.ts > now + 15 || now - input.ts > 120 ||
-      !Array.isArray(input.results) || input.results.length !== 2) throw Error('Invalid probe');
+      !Array.isArray(input.results) || ![1, 2].includes(input.results.length)) throw Error('Invalid probe');
   for (const echo of [input.icmp, input.icmp6]) {
     if (echo !== undefined && !validEchoCounts(echo?.sent, echo?.received, 3)) throw Error('ICMP counts');
   }
@@ -19,6 +19,7 @@ export function normalizeMacProbe(input, now) {
       status: r.outcome === 'ok' ? tcpStatus(r.ms, 500) : ['timeout','failed'].includes(r.outcome) ? 'down' : 'unknown',
       latency: r.outcome === 'ok' ? r.ms : null};
   });
+  if (!seen.has(6) || (!seen.has(4) && input.icmp !== undefined)) throw Error('Invalid family');
   const valid = results.filter(r => r.latency !== null);
   const latency = valid.length ? Math.round(valid.reduce((sum,r) => sum+r.latency,0)/valid.length) : null;
   return [{id:'link',ts:input.ts,latency,status:latency !== null ? tcpStatus(latency,500) : results.some(r=>r.status==='down') ? 'down' : 'unknown'}];
@@ -127,6 +128,8 @@ export function linkSummary({ start, width }, now, latest, buckets) {
       meanLatency: row.latency_n ? Math.round(row.latency_sum / row.latency_n) : null,
       replyRate: row.packets_sent ? 100 * row.packets_received / row.packets_sent : null,
       ipv6ReplyRate: row.ipv6_packets_sent ? 100 * row.ipv6_packets_received / row.ipv6_packets_sent : null,
+      ...(row.ipv6_packets_sent ? {ping: {sent: row.ipv6_packets_sent, received: row.ipv6_packets_received}}
+        : row.packets_sent ? {ping: {sent: row.packets_sent, received: row.packets_received}} : {}),
     };
     history[slot] = row.down ? 'down' : row.slow ? 'degraded' : row.ok ? 'ok' : 'unknown';
     samples += valid;

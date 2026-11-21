@@ -150,6 +150,7 @@ button { font: inherit; }
 .link-interval-metrics { display: grid; grid-template-columns: auto auto; gap: 4px 20px; margin: 0 0 2px; align-items: baseline; }
 .link-interval-metrics dt { color: var(--rp-muted); }
 .link-interval-metrics dd { margin: 0; color: var(--rp-ink); text-align: right; font-variant-numeric: tabular-nums; }
+.link-interval-metrics dd[data-unanswered] { color: var(--rp-down); }
 .history-tooltip .ant-badge, .history-tooltip-metrics { flex-shrink: 0; white-space: nowrap; }
 .history-tooltip-metrics .ant-typography { font-size: 13px; line-height: 20px; }
 .history-tooltip-period.ant-typography { font-size: 12px; }

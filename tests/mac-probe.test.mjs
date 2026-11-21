@@ -4,6 +4,9 @@ import {normalizeMacProbe,ingestMacProbe} from '../cloud/mac-probe.mjs';
 const valid=()=>({schema:1,ts:1000,path:'physical-interface',protocol:'tcp-connect',results:[{family:4,outcome:'timeout',ms:null},{family:6,outcome:'ok',ms:190.3}]});
 test('TCP outcomes do not become fabricated latency or packet loss',()=>{
  assert.deepEqual(normalizeMacProbe(valid(),1001),[{id:'link',ts:1000,status:'ok',latency:190}]);
+ const single=valid();single.results=single.results.filter(r=>r.family===6);
+ assert.deepEqual(normalizeMacProbe(single,1001),normalizeMacProbe(valid(),1001));
+ assert.throws(()=>normalizeMacProbe({...single,icmp:{sent:3,received:0}},1001));
  const v=valid();v.results[0].outcome='unavailable';assert.equal(normalizeMacProbe(v,1001)[0].status,'ok');
  v.results[1].ms=800;assert.equal(normalizeMacProbe(v,1001)[0].status,'degraded');
 });

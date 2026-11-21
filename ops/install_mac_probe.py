@@ -25,7 +25,7 @@ def install(deployment, token_file, root=None):
     os.chmod(target,0o700)
     config = target/'config.json'
     i=deployment['instance']
-    data={'ipv4':i['ipv4'],'ipv6':i.get('ipv6'),'port':i['port'],
+    data={'ipv6':i.get('ipv6'),'port':i['port'],
           'endpoint':'https://'+deployment['status_hostname']+'/private/mac-probe-ingest','token':token}
     if 'aggregate_start' in deployment: data['aggregate_start']=deployment['aggregate_start']
     fd, name=tempfile.mkstemp(prefix='.config-',dir=target)

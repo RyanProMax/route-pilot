@@ -1,6 +1,6 @@
 """Bounded macOS physical-interface TCP timing and IPv6 ICMP echo sampling.
 
-Run once/minute using launchd. Reads a mode-0600 JSON config with ipv4, ipv6,
+Run once/minute using launchd. Reads a mode-0600 JSON config with ipv6,
 port, endpoint and token. Minute observations persist locally; closed 20-minute
 summaries are uploaded at boundaries. Sleeping/offline periods stay missing.
 """
@@ -41,16 +41,13 @@ def discover():
     return physical_interfaces(output)
 
 
-def measure(address, family, interface):
-    result = {'family': family, 'outcome': 'unavailable', 'ms': None}
+def measure(address, interface):
+    result = {'family': 6, 'outcome': 'unavailable', 'ms': None}
     if not interface or not address: return result
-    af = socket.AF_INET if family == 4 else socket.AF_INET6
     try:
-        # Darwin IP_BOUND_IF/IPV6_BOUND_IF constrain only this socket's egress.
-        with socket.socket(af, socket.SOCK_STREAM) as sock:
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
             sock.settimeout(TIMEOUT)
-            sock.setsockopt(socket.IPPROTO_IP if family == 4 else socket.IPPROTO_IPV6,
-                            25 if family == 4 else 125, socket.if_nametoindex(interface))
+            sock.setsockopt(socket.IPPROTO_IPV6, 125, socket.if_nametoindex(interface))  # Darwin IPV6_BOUND_IF
             started = time.monotonic()
             sock.connect(address)
             elapsed = (time.monotonic() - started) * 1000
@@ -83,21 +80,19 @@ def echo_counts(address, interface):
 def collect(config):
     started = time.monotonic()
     wall_started = time.time()
-    before = discover()
-    rows = []
+    interface = discover().get(6)
+    target = config.get('ipv6')
     with ThreadPoolExecutor(max_workers=1) as pool:
-        echo = pool.submit(echo_counts, config.get('ipv6'), before.get(6))
-        for family in (4, 6):
-            target = config.get(f'ipv{family}')
-            rows.append(measure((target, config['port']) if target else None, family, before.get(family)))
+        echo = pool.submit(echo_counts, target, interface)
+        row = measure((target, config['port']) if target else None, interface)
         packets = echo.result()
-    after = discover()
+    after = discover().get(6)
     # A wake/network switch during sampling must not become a misleading result.
-    if time.monotonic() - started > 18 or time.time() - wall_started > 18 or before != after:
+    if time.monotonic() - started > 18 or time.time() - wall_started > 18 or interface != after:
         packets = None
-        rows = [{'family': family, 'outcome': 'unavailable', 'ms': None} for family in (4, 6)]
+        row = {'family': 6, 'outcome': 'unavailable', 'ms': None}
     return {'schema': 1, 'ts': int(time.time()), 'protocol': 'tcp-connect',
-            'path': 'physical-interface', 'results': rows, **({'icmp6': packets} if packets else {})}
+            'path': 'physical-interface', 'results': [row], **({'icmp6': packets} if packets else {})}
 
 
 def load_config(path):

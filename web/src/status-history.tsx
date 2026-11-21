@@ -1,5 +1,5 @@
 import { Badge, Button, Flex, Tooltip, Typography } from 'antd';
-import { Fragment, type CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { Item, Summary } from './data';
 export const labels = {
@@ -8,7 +8,7 @@ export const labels = {
   egress: '固定出口',
   edge4: 'IPv4 入口',
   edge6: 'IPv6 入口',
-  link: '链路质量',
+  link: '入口建连',
   connections: '节点连接数',
 } as const;
 export const states = {
@@ -49,13 +49,12 @@ export function HistoryBars({ item, data, instanceId, activeTooltip, setActiveTo
             const credentials = item.deviceHistory?.[index] ?? null;
             const interval = item.intervals?.[index];
             const latency = interval?.meanLatency == null ? '暂无数据' : interval.meanLatency + ' ms';
-            const rates = [];
-            if (interval?.ipv6ReplyRate != null) rates.push(['IPv6 Ping 应答率', Number(interval.ipv6ReplyRate.toFixed(2)) + '%']);
-            if (interval?.replyRate != null) rates.push(['IPv4 Ping 应答率', Number(interval.replyRate.toFixed(2)) + '%']);
-            if (!rates.length) rates.push(['Ping 应答率', '未采集']);
+            const ping = interval?.ping;
+            const rate = ping ? 100 * ping.received / ping.sent : interval?.ipv6ReplyRate ?? interval?.replyRate;
+            const replies = rate == null ? '未采集' : Number(rate.toFixed(2)) + '%' + (ping ? '（' + ping.received + '/' + ping.sent + '）' : '');
             const hasConnections = item.id === 'connections' && count !== null;
             const isLink = item.id === 'link';
-            const label = isLink ? '平均建连延时 ' + latency + '，' + rates.map(rate => rate.join(' ')).join('，') : hasConnections
+            const label = isLink ? '平均建连延时 ' + latency + '，Ping 应答率 ' + replies : hasConnections
               ? (credentials !== null ? credentials + ' 个凭证，' : '') + count + ' 条连接'
               : states[status].label;
             const height = item.id === 'connections' && count !== null
@@ -68,7 +67,7 @@ export function HistoryBars({ item, data, instanceId, activeTooltip, setActiveTo
                   <Flex vertical gap={6} className="history-tooltip">
                     {isLink ? <dl className="link-interval-metrics">
                       <dt>平均建连延时</dt><dd>{latency}</dd>
-                      {rates.map(([name, value]) => <Fragment key={name}><dt>{name}</dt><dd>{value}</dd></Fragment>)}
+                      <dt>Ping 应答率</dt><dd data-unanswered={rate === 0 || undefined}>{replies}</dd>
                     </dl> : hasConnections ? <Flex align="center" gap={8}>
                       <Badge color={states[status].color} role="img" aria-label={states[status].label} />
                       <Flex align="center" gap={12} className="history-tooltip-metrics">
