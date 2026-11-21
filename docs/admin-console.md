@@ -4,14 +4,14 @@ One React/TypeScript/Ant Design application serves `/` for both visitors and adm
 
 - Signed out: redacted public status, with a login button in the top right.
 - Signed in as an RP administrator: the same overview layout, with management menus available.
-- Login methods appear in an Ant Design modal. Phase one only supports allowlisted Google administrator accounts; there is no standalone login page.
+- Hover over or activate the login button to reveal the circular provider button beside it. Choose Google to sign in with an allowlisted administrator account.
 - Credential and activity views use `/?view=credentials` and `/?view=activity`. All administrator views and Google login results use the root page; there is no separate administrator route.
 
 Accounts, role checks and sessions belong to the RP server. This release has no ordinary-user page or public registration.
 
 ## Console layout
 
-The existing management API is scoped to one node per deployment; this visual refactor does not add cross-node administration. Resource metrics remain directly visible, and status details use tooltips rather than dialogs. Only login and consequential action confirmations use modals. The console uses a top navigation bar for overview and credential management, with the account menu on the right. Credential management has no duplicate page heading; its create button sits at the right of the tabs. Operation history remains available under the credential management tabs and at `/?view=activity`.
+The existing management API is scoped to one node per deployment; this visual refactor does not add cross-node administration. Resource metrics remain directly visible, and status details use tooltips rather than dialogs. Consequential actions require confirmation in a modal. The console uses a top navigation bar for overview and credential management, with the account menu on the right. Credential management has no duplicate page heading; its create button sits at the right of the tabs. Operation history remains available under the credential management tabs and at `/?view=activity`.
 
 The overview reads all history windows from the same public status API as the home page; changing the time range does not issue another request. Status cells share the home page renderer and responsive sizing: 72 samples, 3px gaps and 26px height on desktop; 2px gaps and 24px height at widths up to 820px. Hover, keyboard focus and touch expose the sample period and result. Sample periods use API timestamps.
 

@@ -10,7 +10,7 @@
 .header-actions .theme-button { color: var(--rp-muted); width: 36px; }
 .header-actions .login-button, .header-actions .account-button { padding-inline: 14px; color: var(--rp-ink); background: transparent; border: 1px solid var(--rp-line); font-weight: 400; }
 .header-actions .ant-btn:is(.login-button, .account-button):not(:disabled):is(:hover, :active, :focus-visible) { color: var(--rp-ink); background: transparent; border-color: var(--rp-muted); }
-.header-actions .account-button { gap: 7px; padding-inline: 11px 10px; }
+.header-actions .account-button { gap: 7px; padding-inline: 17px; }
 .app-navigation.ant-menu { justify-content: center; width: max-content; max-width: 320px; min-width: 0; border: 0; background: transparent; }
 .app-navigation.ant-menu-horizontal { line-height: 36px; gap: 4px; }
 .app-navigation.ant-menu-horizontal > .ant-menu-item { padding-inline: 16px; border-radius: 999px; }
@@ -50,9 +50,39 @@
 .subscription-links h4 { font-size: 14px; font-weight: 450; margin: 0 0 4px; }
 .subscription-links textarea.ant-input { margin-top: 12px; font: 12px/1.6 ui-monospace, monospace; background: var(--rp-selected); resize: none; }
 .ant-drawer-content-wrapper { max-width: 100vw; }
-.login-options { padding: 16px 0 8px; }
-.login-options > .ant-btn { width: 54px; height: 54px; background: #fff; border: 1px solid #ddd; }
-.login-options > .ant-alert { width: 100%; }
+.login-launcher { position: relative; display: flex; }
+.login-launcher:has(.login-orbit) { z-index: 5; }
+.header-actions .login-button[aria-expanded="true"] { border-color: var(--rp-muted); }
+.login-orbit {
+  position: absolute; inset: 100% 0 auto auto; width: 138px; padding-top: 8px;
+  display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; isolation: isolate;
+}
+.login-orbit::before {
+  content: ""; position: absolute; z-index: -1; top: 0; right: 33px; width: 64px; height: 34px;
+  border: 1px dashed var(--rp-muted); border-width: 0 1px 1px 0; border-bottom-right-radius: 100%;
+  opacity: .65; pointer-events: none;
+}
+.login-provider { position: relative; display: inline-grid; justify-items: center; min-width: 62px; padding: 0; border: 0; background: transparent; color: var(--rp-ink); border-radius: 26px; }
+.provider-disc {
+  display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%;
+  background: #fff; color: #376958; border: 1px solid #0002;
+  box-shadow: 0 5px 14px #0002, inset 0 -2px 3px #00000008;
+  transition: scale .18s ease;
+}
+.provider-caption { position: absolute; right: 100%; align-self: center; padding: 1px 5px; white-space: nowrap; border-radius: 999px; background: var(--rp-surface); font-size: 12px; line-height: 18px; }
+.login-provider:not([aria-disabled="true"]):is(:hover,:focus-visible) .provider-disc { scale: 1.07; }
+.login-provider[aria-disabled="true"] { opacity: .6; cursor: default; }
+.login-notice { justify-self: end; width: max-content; max-width: min(240px, calc(100vw - 32px)); margin-top: 5px; padding: 6px 10px; border: 1px solid var(--rp-line); border-radius: 12px; background: var(--rp-surface); color: var(--rp-ink); font-size: 12px; }
+@media (prefers-reduced-motion: no-preference) {
+  .provider-disc, .provider-caption { animation: login-orbit-in .24s cubic-bezier(.18,.75,.28,1) backwards; }
+  .provider-caption { animation-delay: .035s; }
+  @keyframes login-orbit-in {
+    from { opacity: 0; transform: translate(61px,-29px) scale(.52); }
+    65% { opacity: 1; transform: translate(10px,1px) scale(.96); }
+    to { opacity: 1; transform: none; }
+  }
+}
+@media (prefers-reduced-motion: reduce) { .provider-disc { transition: none; } }
 @media (max-width: 600px) {
   .app-header { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
   .console-brand { gap: 8px; }

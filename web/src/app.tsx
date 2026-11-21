@@ -12,7 +12,6 @@ import {
   Input,
   Layout,
   Menu,
-  Modal,
   Select,
   Skeleton,
   Table,
@@ -28,7 +27,6 @@ import {
   Ellipsis,
   KeyRound,
   LogOut,
-  LogIn,
   Plus,
   Search,
   Moon,
@@ -43,7 +41,7 @@ import { measurementFresh } from "./freshness";
 import { pollVisible } from "./polling";
 import type { HostLoad } from "./load";
 import mark from "./assets/routepilot-mark.svg";
-import google from "./assets/google-g.png";
+import { LoginOptions } from "./login-options";
 import "./status.css";
 import "./app.css";
 
@@ -173,7 +171,7 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
   const { message, modal } = AntApp.useApp();
   const [data, setData] = useState<ConsoleData | null>(null),
     [auth, setAuth] = useState<boolean | null>(null),
-    [ready, setReady] = useState<boolean | null>(null);
+    [ready, setReady] = useState<boolean | null | "unreachable">(null);
   const [page, setPage] = useState<Page>(pageFromURL),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -255,7 +253,7 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
         if (!controller.signal.aborted) setReady(next.ready === true);
       } catch {
         if (!controller.signal.aborted) {
-          setLoginError("暂时无法连接登录服务，正在重试");
+          setReady("unreachable");
           timer = setTimeout(metadata, 15000);
         }
       }
@@ -576,6 +574,9 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
   ];
   const isAdmin = auth === true && data?.account.role === "admin";
   const activePage = isAdmin ? page : "overview";
+  const localLogin = ready === false && import.meta.env.DEV && import.meta.env.ROUTEPILOT_LOCAL_LOGIN;
+  const loginNotice = loginError || (ready === "unreachable" ? "暂时无法连接登录服务，正在重试"
+    : ready === false && !localLogin ? "Google 登录尚未配置" : "");
   return (
     <Layout className="site-layout">
       <Layout className="site-body status-page">
@@ -607,7 +608,10 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
               <span>管理员</span>
               <ChevronDown size={13} strokeWidth={1.65} aria-hidden="true" />
             </Button>
-          </Dropdown> : <Button className="login-button" icon={<LogIn size={16} />} onClick={() => { setLoginError(""); setLoginOpen(true); }}>登录</Button>}
+          </Dropdown> : <LoginOptions open={loginOpen} local={Boolean(localLogin)} busy={busy}
+            available={ready === true || Boolean(localLogin)} notice={loginNotice}
+            onOpenChange={open => { setLoginOpen(open); if (!open) setLoginError(""); }}
+            onLogin={localLogin ? loginLocally : login} />}
           </div>
         </header>
         <StatusOverview initial={initial} privateNode={isAdmin ? data : null} hidden={activePage !== 'overview'} />
@@ -775,19 +779,6 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
           )}
         </main>}
       </Layout>
-      <Modal title="登录" open={loginOpen && !isAdmin} onCancel={() => setLoginOpen(false)} footer={null}
-        width={320} centered destroyOnHidden mask={{ closable: !busy }} closable={false} keyboard={!busy}
-        styles={{ header: { textAlign: 'center' } }}>
-        <Flex vertical align="center" gap={20} className="login-options">
-          {loginError && <Alert type="warning" title={loginError} showIcon />}
-          {ready === false && import.meta.env.DEV && import.meta.env.ROUTEPILOT_LOCAL_LOGIN ?
-            <Button onClick={loginLocally} loading={busy}>使用本地开发账号登录</Button> :
-            ready === false ? <Alert type="info" title="Google 登录尚未配置" showIcon /> :
-            <Button shape="circle" size="large" aria-label="使用 Google 登录"
-              icon={<img src={google} width={24} height={24} alt="" />}
-              loading={busy || ready === null} disabled={ready !== true} onClick={login} />}
-        </Flex>
-      </Modal>
       <Drawer
         title={editing ? "修改凭证名称" : "创建凭证"}
         open={isAdmin && formOpen}
