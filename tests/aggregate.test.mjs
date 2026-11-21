@@ -92,12 +92,16 @@ test('interval metrics weight measured TCP timings and ICMP packets across old a
   const {sql, DB} = database();
   const env = {DB, MAC_PROBE_SHA256:hash};
   try {
-    const legacy = {...probe(60), icmp:{sent:3, received:0}};
+    const legacy = {...probe(60), icmp:{sent:3, received:0}, icmp6:{sent:3, received:0}};
     for (let i=0; i<2; i++) assert.equal((await ingestMacProbe(request(legacy),env,61)).status,200);
     assert.equal((await ingestMacProbe(request({...legacy, icmp:{sent:3,received:4}}),env,61)).status,400);
     const measured = window(1200);
     Object.assign(measured.checks[0], {latency_sum:2000,latency_max:100,packets_sent:30,packets_received:27});
     const old = window(2400);
+    Object.assign(old.checks[0], {ipv6_packets_sent:6, ipv6_packets_received:6});
+    const invalid6 = structuredClone(old);
+    invalid6.checks[0].ipv6_packets_received = 7;
+    assert.throws(()=>normalizeWindows([invalid6],'mac',3601));
     const invalid = structuredClone(measured);
     invalid.checks[0].packets_received=31;
     assert.throws(()=>normalizeWindows([invalid],'mac',3601));
@@ -106,13 +110,14 @@ test('interval metrics weight measured TCP timings and ICMP packets across old a
     const views=await macProbeSummaries(DB,3601);
     const daily=views['24h'].checks[0].intervals;
     assert.deepEqual(daily.slice(-4), [
-      {meanLatency:170,replyRate:0}, {meanLatency:100,replyRate:90},
-      {meanLatency:170,replyRate:null}, null,
+      {meanLatency:170,replyRate:0,ipv6ReplyRate:0}, {meanLatency:100,replyRate:90,ipv6ReplyRate:null},
+      {meanLatency:170,replyRate:null,ipv6ReplyRate:100}, null,
     ]);
     for (const range of ['7d','30d']) {
       const interval=views[range].checks[0].intervals.at(-1);
       assert.equal(interval.meanLatency,Math.round((170+2000+3400)/41));
       assert.equal(interval.replyRate,100*27/33);
+      assert.equal(interval.ipv6ReplyRate,100*6/9);
     }
   } finally { sql.close(); }
 });

@@ -14,7 +14,7 @@ test('credential jobs and inventory commit through real D1 transactions in worke
  const mf=new Miniflare({modules:true,script:bundle.outputFiles[0].text,compatibilityDate:'2026-07-01',d1Databases:['DB'],bindings:{APP_ORIGIN:origin,INSTANCE_ID:'test',INSTANCE_NAME:'东京节点',CONTROL_SHA256:hash(control),SUBSCRIPTION_KEY:randomBytes(32).toString('base64')}});
  try{
   const db=await mf.getD1Database('DB');
-  for(const name of ['0004_private_control.sql','0005_google_accounts.sql','0006_admin_console.sql','0008_twenty_minute_aggregation.sql','0009_link_packet_buckets.sql'])
+  for(const name of ['0004_private_control.sql','0005_google_accounts.sql','0006_admin_console.sql','0008_twenty_minute_aggregation.sql','0009_link_packet_buckets.sql', '0010_ipv6_link_packets.sql'])
    for(const statement of readFileSync(new URL('../cloud/migrations/'+name,import.meta.url),'utf8').split(';').filter(x=>x.trim()))await db.prepare(statement).run();
   await db.exec('CREATE TABLE reports(minute INTEGER,ts INTEGER,metrics TEXT)');
   await db.exec('CREATE TABLE latest(check_id TEXT,ts INTEGER,status TEXT,latency INTEGER)');

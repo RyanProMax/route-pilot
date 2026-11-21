@@ -21,20 +21,22 @@ Network interfaces: en1 en0
     def test_switch_discards_measurements(self):
         with patch.object(m,'echo_counts',return_value={'sent':3,'received':1}),patch.object(m,'discover',side_effect=[{4:'en0'},{4:'en1'}]),patch.object(m,'measure',return_value={'family':4,'outcome':'ok','ms':12}):
             result=m.collect({'ipv4':'192.0.2.1','port':443})
-        self.assertNotIn('icmp',result)
+        self.assertNotIn('icmp6',result)
         self.assertTrue(all(r['ms'] is None and r['outcome']=='unavailable' for r in result['results']))
     def test_icmp_counts_are_independent_of_tcp_outcomes(self):
         for received in (0, 2, 3):
             result = m.subprocess.CompletedProcess([], 2 if received == 0 else 0,
                 f'3 packets transmitted, {received} packets received', '')
             with patch.object(m.subprocess, 'run', return_value=result) as run:
-                self.assertEqual(m.echo_counts('192.0.2.1', 'en0'), {'sent':3, 'received':received})
-                self.assertIn('en0', run.call_args.args[0])
+                self.assertEqual(m.echo_counts('2001:db8::1', 'en0'), {'sent':3, 'received':received})
+                self.assertEqual(run.call_args.args[0], ['/sbin/ping6','-n','-q','-B','en0','-c','3','2001:db8::1'])
         with patch.object(m.subprocess, 'run', side_effect=PermissionError()):
-            self.assertIsNone(m.echo_counts('192.0.2.1', 'en0'))
+            self.assertIsNone(m.echo_counts('2001:db8::1', 'en0'))
         with patch.object(m.subprocess, 'run', return_value=m.subprocess.CompletedProcess([], 2,
                 '3 packets transmitted, 0 packets received', 'ping: sendto: No route to host')):
-            self.assertIsNone(m.echo_counts('192.0.2.1', 'en0'))
+            self.assertIsNone(m.echo_counts('2001:db8::1', 'en0'))
+        self.assertIsNone(m.echo_counts(None, 'en0'))
+        self.assertIsNone(m.echo_counts('2001:db8::1', None))
 
     def test_closed_window_adds_only_observed_echo_packets(self):
         import sys
@@ -45,9 +47,12 @@ Network interfaces: en1 en0
             path = Path(directory)/'aggregate.sqlite3'
             for minute, packets in [(0, None), (1, {'sent':3,'received':0}), (2, {'sent':2,'received':2}), (20, None)]:
                 report = {'ts':1200+60*minute,'results':[{'outcome':'ok','ms':100}], 'icmp':packets}
+                if minute == 2:
+                    report['icmp6'] = report.pop('icmp')
                 result = record(path,1200,report['ts'],[link_check(report)],snapshot=report)
             check = result['windows'][0]['checks'][0]
-            self.assertEqual((check['packets_sent'],check['packets_received'],check['latency_n']), (5,2,3))
+            self.assertEqual((check['packets_sent'],check['packets_received'],check['latency_n']), (3,0,3))
+            self.assertEqual((check['ipv6_packets_sent'],check['ipv6_packets_received']), (2,2))
 
     def test_bound_socket_and_timeout(self):
         with patch.object(m.socket,'socket') as factory,patch.object(m.socket,'if_nametoindex',return_value=7):

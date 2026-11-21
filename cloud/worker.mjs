@@ -151,7 +151,7 @@ async function observe(env,now) {
 async function prune(env,now) {
   const cutoff=now-31*86400;
   await env.DB.prepare("DELETE FROM aggregate_windows WHERE start+1200<?").bind(cutoff).run();
-  await env.DB.batch(["DELETE FROM samples WHERE ts<?","DELETE FROM reports WHERE minute<?","DELETE FROM events WHERE ts<?","DELETE FROM buckets WHERE bucket+width<?","DELETE FROM connection_buckets WHERE bucket+width<?","DELETE FROM link_packet_buckets WHERE bucket+width<?"].map((sql,i)=>env.DB.prepare(sql).bind(i===1?Math.floor(cutoff/60):cutoff)));
+  await env.DB.batch(["DELETE FROM samples WHERE ts<?","DELETE FROM reports WHERE minute<?","DELETE FROM events WHERE ts<?","DELETE FROM buckets WHERE bucket+width<?","DELETE FROM connection_buckets WHERE bucket+width<?","DELETE FROM link_packet_buckets WHERE bucket+width<?","DELETE FROM link_ipv6_packet_buckets WHERE bucket+width<?"].map((sql,i)=>env.DB.prepare(sql).bind(i===1?Math.floor(cutoff/60):cutoff)));
   await env.DB.batch([env.DB.prepare("DELETE FROM control_jobs WHERE state IN ('done','failed') AND finished<?").bind(now-90*86400),
     env.DB.prepare('DELETE FROM admin_events WHERE at<?').bind(now-90*86400),env.DB.prepare('DELETE FROM rp_sessions WHERE expires<?').bind(now),
     env.DB.prepare('DELETE FROM oauth_attempts WHERE expires<?').bind(now),

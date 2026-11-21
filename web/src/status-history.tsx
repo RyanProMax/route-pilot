@@ -1,5 +1,5 @@
 import { Badge, Button, Flex, Tooltip, Typography } from 'antd';
-import type { CSSProperties } from 'react';
+import { Fragment, type CSSProperties } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { Item, Summary } from './data';
 export const labels = {
@@ -49,10 +49,13 @@ export function HistoryBars({ item, data, instanceId, activeTooltip, setActiveTo
             const credentials = item.deviceHistory?.[index] ?? null;
             const interval = item.intervals?.[index];
             const latency = interval?.meanLatency == null ? '暂无数据' : interval.meanLatency + ' ms';
-            const replyRate = interval?.replyRate == null ? '未采集' : Number(interval.replyRate.toFixed(2)) + '%';
+            const rates = [];
+            if (interval?.ipv6ReplyRate != null) rates.push(['IPv6 Ping 应答率', Number(interval.ipv6ReplyRate.toFixed(2)) + '%']);
+            if (interval?.replyRate != null) rates.push(['IPv4 Ping 应答率', Number(interval.replyRate.toFixed(2)) + '%']);
+            if (!rates.length) rates.push(['Ping 应答率', '未采集']);
             const hasConnections = item.id === 'connections' && count !== null;
             const isLink = item.id === 'link';
-            const label = isLink ? '平均延时 ' + latency + '，探测应答率 ' + replyRate : hasConnections
+            const label = isLink ? '平均建连延时 ' + latency + '，' + rates.map(rate => rate.join(' ')).join('，') : hasConnections
               ? (credentials !== null ? credentials + ' 个凭证，' : '') + count + ' 条连接'
               : states[status].label;
             const height = item.id === 'connections' && count !== null
@@ -64,8 +67,8 @@ export function HistoryBars({ item, data, instanceId, activeTooltip, setActiveTo
                 title={
                   <Flex vertical gap={6} className="history-tooltip">
                     {isLink ? <dl className="link-interval-metrics">
-                      <dt>平均延时</dt><dd>{latency}</dd>
-                      <dt>探测应答率</dt><dd>{replyRate}</dd>
+                      <dt>平均建连延时</dt><dd>{latency}</dd>
+                      {rates.map(([name, value]) => <Fragment key={name}><dt>{name}</dt><dd>{value}</dd></Fragment>)}
                     </dl> : hasConnections ? <Flex align="center" gap={8}>
                       <Badge color={states[status].color} role="img" aria-label={states[status].label} />
                       <Flex align="center" gap={12} className="history-tooltip-metrics">

@@ -5,7 +5,7 @@ export type Range = typeof ranges[number];
 export type Instance = { id: string; name: string; country?: string };
 export type Item = {
   id: Key; status: State; at: number | null; latency: number | null; rate: number | null;
-  freshFor?: number; intervals?: ({ meanLatency: number | null; replyRate: number | null } | null)[]; history: State[]; value?: string | null; values?: (string | null)[];
+  freshFor?: number; intervals?: ({ meanLatency: number | null; replyRate: number | null; ipv6ReplyRate?: number | null } | null)[]; history: State[]; value?: string | null; values?: (string | null)[];
   devices?: number | null; deviceHistory?: (number | null)[];
 };
 export type Summary = {
@@ -76,7 +76,8 @@ function validStatus(next: StatusBundle, instanceId: string) {
         nullableNumber(item.latency) && nullableNumber(item.rate) &&
         (!item.intervals || Array.isArray(item.intervals) && item.intervals.length <= 72 &&
           item.intervals.every(interval => interval === null ||
-            interval && nullableNumber(interval.meanLatency) && (interval.replyRate == null || Number.isFinite(interval.replyRate)))) &&
+            interval && nullableNumber(interval.meanLatency) && [interval.replyRate, interval.ipv6ReplyRate].every(
+              rate => rate == null || Number.isFinite(rate) && rate >= 0 && rate <= 100))) &&
         Array.isArray(item.history) && item.history.length <= 72 && item.history.every(state => states.includes(state)) &&
         (!item.values || Array.isArray(item.values) && item.values.every(value => value === null || typeof value === 'string')) &&
         (!item.deviceHistory || Array.isArray(item.deviceHistory) && item.deviceHistory.every(nullableNumber))) &&

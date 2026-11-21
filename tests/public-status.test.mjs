@@ -14,6 +14,7 @@ test("public summaries omit operational fields, arbitrary messages and unexpecte
     sql.exec(readFileSync(new URL("../cloud/migrations/0003_device_history.sql", import.meta.url), "utf8"));
     sql.exec(readFileSync(new URL("../cloud/migrations/0008_twenty_minute_aggregation.sql", import.meta.url), "utf8"));
     sql.exec(readFileSync(new URL("../cloud/migrations/0009_link_packet_buckets.sql", import.meta.url), "utf8"));
+    sql.exec(readFileSync(new URL("../cloud/migrations/0010_ipv6_link_packets.sql", import.meta.url), "utf8"));
     for (const id of ["heartbeat", "xray", "egress", "edge4", "edge6", "link", seed]) {
       sql.prepare("INSERT INTO samples VALUES(?,?,?,?,?,?)").run(id, 1, 100, "down", null, seed);
     }
@@ -67,7 +68,7 @@ test("public summaries omit operational fields, arbitrary messages and unexpecte
 test("one batched read preserves all three resolutions, event windows and redaction", async () => {
   const sql = new DatabaseSync(":memory:");
   try {
-    for (const migration of ["0001_monitor", "0002_connection_history", "0003_device_history", "0008_twenty_minute_aggregation","0009_link_packet_buckets"]) {
+    for (const migration of ["0001_monitor", "0002_connection_history", "0003_device_history", "0008_twenty_minute_aggregation","0009_link_packet_buckets", "0010_ipv6_link_packets"]) {
       sql.exec(readFileSync(new URL(`../cloud/migrations/${migration}.sql`, import.meta.url), "utf8"));
     }
     const now = Date.UTC(2026, 10, 5, 12) / 1000;
@@ -112,7 +113,7 @@ test("one batched read preserves all three resolutions, event windows and redact
 test('entry window statistics use measured samples, preserve old status and exclude failed duration', async () => {
   const sql = new DatabaseSync(':memory:');
   try {
-    for (const name of ['0001_monitor', '0002_connection_history', '0003_device_history','0008_twenty_minute_aggregation','0009_link_packet_buckets']) sql.exec(readFileSync(new URL(`../cloud/migrations/${name}.sql`, import.meta.url), 'utf8'));
+    for (const name of ['0001_monitor', '0002_connection_history', '0003_device_history','0008_twenty_minute_aggregation','0009_link_packet_buckets', '0010_ipv6_link_packets']) sql.exec(readFileSync(new URL(`../cloud/migrations/${name}.sql`, import.meta.url), 'utf8'));
     for (const [ts, status, latency] of [[60,'ok',2000],[120,'degraded',1000],[180,'down',null],[240,'unknown',null]]) {
       sql.prepare('INSERT INTO samples VALUES(?,?,?,?,?,?)').run('heartbeat',ts/60,ts,status,latency,'test');
     }
@@ -133,7 +134,7 @@ test('entry window statistics use measured samples, preserve old status and excl
 test('public link quality omits per-family checks and raw reports',async()=>{
  const sql=new DatabaseSync(':memory:');
  try{
- for(const name of ['0001_monitor','0002_connection_history','0003_device_history','0008_twenty_minute_aggregation','0009_link_packet_buckets'])sql.exec(readFileSync(new URL(`../cloud/migrations/${name}.sql`,import.meta.url),'utf8'));
+ for(const name of ['0001_monitor','0002_connection_history','0003_device_history','0008_twenty_minute_aggregation','0009_link_packet_buckets', '0010_ipv6_link_packets'])sql.exec(readFileSync(new URL(`../cloud/migrations/${name}.sql`,import.meta.url),'utf8'));
  sql.prepare('INSERT INTO samples VALUES(?,?,?,?,?,?)').run('mac6',16,1000,'down',null,'home-private');
  const db={prepare(query){return {query,args:[],bind(...args){this.args=args;return this;}};},batch(q){return q.map(({query,args})=>({results:sql.prepare(query).all(...args)}));}};
  const s=JSON.stringify(await publicSummary(db,'24h',1001,1024));

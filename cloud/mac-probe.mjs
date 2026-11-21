@@ -6,7 +6,9 @@ export function normalizeMacProbe(input, now) {
   if (input?.schema !== 1 || input.path !== 'physical-interface' || input.protocol !== 'tcp-connect' ||
       !Number.isSafeInteger(input.ts) || input.ts > now + 15 || now - input.ts > 120 ||
       !Array.isArray(input.results) || input.results.length !== 2) throw Error('Invalid probe');
-  if (input.icmp !== undefined && !validEchoCounts(input.icmp?.sent, input.icmp?.received, 3)) throw Error('ICMP counts');
+  for (const echo of [input.icmp, input.icmp6]) {
+    if (echo !== undefined && !validEchoCounts(echo?.sent, echo?.received, 3)) throw Error('ICMP counts');
+  }
   const seen = new Set();
   const results = input.results.map(r => {
     if (![4, 6].includes(r.family) || seen.has(r.family)) throw Error('Invalid family');
@@ -64,14 +66,15 @@ export async function ingestMacProbe(request, env, now) {
   let rows;
   try {rows=normalizeMacProbe(input,now);} catch {return reply({error:'Invalid or expired probe'},400);}
   const statements = [];
-  if (input.icmp) {
+  for (const [table, counts] of [['link_packet_buckets', input.icmp], ['link_ipv6_packet_buckets', input.icmp6]]) {
+    if (!counts) continue;
     // The first sample for a minute owns both its TCP and ICMP measurements.
     const minute = Math.floor(input.ts / 60);
-    statements.push(env.DB.prepare(`INSERT INTO link_packet_buckets(width,bucket,sent,received)
+    statements.push(env.DB.prepare(`INSERT INTO ${table}(width,bucket,sent,received)
       SELECT width,(CAST(? AS INTEGER)/width)*width,?,? FROM (SELECT 1200 AS width UNION ALL SELECT 8400 UNION ALL SELECT 36000)
       WHERE NOT EXISTS (SELECT 1 FROM samples WHERE check_id='link' AND minute=?)
       ON CONFLICT(width,bucket) DO UPDATE SET sent=sent+excluded.sent,received=received+excluded.received`)
-      .bind(input.ts, input.icmp.sent, input.icmp.received, minute));
+      .bind(input.ts, counts.sent, counts.received, minute));
   }
   await env.DB.batch([...statements, ...rows.map(r=>env.DB.prepare('INSERT INTO samples(check_id,minute,ts,status,message,latency) VALUES(?,?,?,?,?,?) ON CONFLICT DO NOTHING')
     .bind(r.id,Math.floor(r.ts/60),r.ts,r.status,'Mac physical-interface TCP connect',r.latency))]);
@@ -79,9 +82,11 @@ export async function ingestMacProbe(request, env, now) {
 }
 
 export function historyBuckets(db, width, start, linkOnly = false) {
-  return db.prepare(`SELECT b.*, p.sent AS packets_sent, p.received AS packets_received
+  return db.prepare(`SELECT b.*, p.sent AS packets_sent, p.received AS packets_received,
+      p6.sent AS ipv6_packets_sent, p6.received AS ipv6_packets_received
     FROM buckets b LEFT JOIN link_packet_buckets p
       ON b.check_id='link' AND p.width=b.width AND p.bucket=b.bucket
+    LEFT JOIN link_ipv6_packet_buckets p6 ON b.check_id='link' AND p6.width=b.width AND p6.bucket=b.bucket
     WHERE b.width=? AND b.bucket>=? AND b.bucket<? ${linkOnly ? "AND b.check_id='link'" : ''}`)
     .bind(width, start, start + 72 * width);
 }
@@ -121,6 +126,7 @@ export function linkSummary({ start, width }, now, latest, buckets) {
     intervals[slot] = {
       meanLatency: row.latency_n ? Math.round(row.latency_sum / row.latency_n) : null,
       replyRate: row.packets_sent ? 100 * row.packets_received / row.packets_sent : null,
+      ipv6ReplyRate: row.ipv6_packets_sent ? 100 * row.ipv6_packets_received / row.ipv6_packets_sent : null,
     };
     history[slot] = row.down ? 'down' : row.slow ? 'degraded' : row.ok ? 'ok' : 'unknown';
     samples += valid;

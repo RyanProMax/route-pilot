@@ -12,13 +12,14 @@ sys.path.insert(0, str(folder))
 from routepilot_aggregate import link_check
 db = sqlite3.connect((folder / 'aggregate.sqlite3').as_uri() + '?mode=ro', uri=True)
 keys = ('id','n','ok','slow','down','missing','latency_sum','latency_n','latency_max')
+packet_keys = ('packets_sent','packets_received','ipv6_packets_sent','ipv6_packets_received')
 db.execute('BEGIN')
 output = []
 for (payload,) in db.execute('SELECT payload FROM windows ORDER BY start'):
     w = json.loads(payload)
     last = w.get('last')
     check = next(c for c in w['checks'] if c['id'] == 'link')
-    output.append({'start': w['start'], 'checks': [{k:check[k] for k in (*keys,'packets_sent','packets_received') if k in check}],
+    output.append({'start': w['start'], 'checks': [{k:check[k] for k in (*keys,*packet_keys) if k in check}],
                    'last': {'ts':last['ts'],'checks':[link_check(last)]} if last else None})
 for (payload,) in db.execute('SELECT payload FROM minutes ORDER BY minute'):
     sample = json.loads(payload)
@@ -28,8 +29,7 @@ for (payload,) in db.execute('SELECT payload FROM minutes ORDER BY minute'):
     row = {'id':'link', 'n':1, 'ok':int(status=='ok'), 'slow':int(status=='degraded'),
            'down':int(status=='down'), 'missing':int(status=='unknown'),
            'latency_sum':ms or 0, 'latency_n':int(ms is not None), 'latency_max':ms}
-    if check.get('packets_sent'):
-        row.update(packets_sent=check['packets_sent'], packets_received=check['packets_received'])
+    row.update({k:check[k] for k in packet_keys if k in check})
     output.append({'start':ts, 'minuteSample':True, 'checks':[row],
                    'last':{'ts':ts, 'checks':[{'id':'link','status':status,'latency':ms}]}})
 db.close()

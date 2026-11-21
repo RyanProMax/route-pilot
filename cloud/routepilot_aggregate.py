@@ -22,6 +22,8 @@ def link_check(report):
     check = {'id': 'link', 'status': status, 'latency': latency}
     if report.get('icmp'):
         check.update(packets_sent=report['icmp']['sent'], packets_received=report['icmp']['received'])
+    if report.get('icmp6'):
+        check.update(ipv6_packets_sent=report['icmp6']['sent'], ipv6_packets_received=report['icmp6']['received'])
     return check
 
 
@@ -96,10 +98,12 @@ def record(path, start, ts, checks, connections=None, snapshot=None):
                     out['checks'].append({'id':id,'n':20,'ok':counts['ok'],'slow':counts['degraded'],
                         'down':counts['down'],'missing':20-counts['ok']-counts['degraded']-counts['down'],
                         'latency_sum':sum(latencies),'latency_n':len(latencies),'latency_max':max(latencies) if latencies else None})
-                    sent = sum(r.get('packets_sent', 0) for r in values)
-                    if id == 'link' and sent:
-                        out['checks'][-1].update(packets_sent=sent,
-                                                 packets_received=sum(r.get('packets_received', 0) for r in values))
+                    if id == 'link':
+                        for prefix in ('packets_', 'ipv6_packets_'):
+                            sent = sum(r.get(prefix+'sent', 0) for r in values)
+                            if sent:
+                                out['checks'][-1][prefix+'sent'] = sent
+                                out['checks'][-1][prefix+'received'] = sum(r.get(prefix+'received', 0) for r in values)
                 if connections is not None:
                     observed = [s['connections'] for s in samples if s['connections'] is not None]
                     devices = [c['device_peak'] for c in observed if c.get('device_peak') is not None]

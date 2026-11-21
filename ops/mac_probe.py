@@ -1,4 +1,4 @@
-"""Bounded macOS physical-interface TCP timing and IPv4 ICMP echo sampling.
+"""Bounded macOS physical-interface TCP timing and IPv6 ICMP echo sampling.
 
 Run once/minute using launchd. Reads a mode-0600 JSON config with ipv4, ipv6,
 port, endpoint and token. Minute observations persist locally; closed 20-minute
@@ -64,13 +64,13 @@ def measure(address, family, interface):
 
 
 def echo_counts(address, interface):
-    """Read actual echo counters from macOS ping on the node's fixed IPv4 path."""
+    """Read IPv6 echo counters on the physical interface, including zero replies."""
     if not address or not interface:
         return None
     try:
         ping = subprocess.run(
-            ['/sbin/ping', '-n', '-q', '-b', interface, '-c', '3', '-t', '5', '-W', '1000', address],
-            capture_output=True, text=True, timeout=7, env={**os.environ, 'LC_ALL': 'C'})
+            ['/sbin/ping6', '-n', '-q', '-B', interface, '-c', '3', address],
+            capture_output=True, text=True, timeout=16, env={**os.environ, 'LC_ALL': 'C'})
     except (OSError, subprocess.TimeoutExpired):
         return None
     counts = re.search(r'(\d+) packets transmitted, (\d+) packets received', ping.stdout)
@@ -86,18 +86,18 @@ def collect(config):
     before = discover()
     rows = []
     with ThreadPoolExecutor(max_workers=1) as pool:
-        echo = pool.submit(echo_counts, config.get('ipv4'), before.get(4))
+        echo = pool.submit(echo_counts, config.get('ipv6'), before.get(6))
         for family in (4, 6):
             target = config.get(f'ipv{family}')
             rows.append(measure((target, config['port']) if target else None, family, before.get(family)))
         packets = echo.result()
     after = discover()
     # A wake/network switch during sampling must not become a misleading result.
-    if time.monotonic() - started > 15 or time.time() - wall_started > 15 or before != after:
+    if time.monotonic() - started > 18 or time.time() - wall_started > 18 or before != after:
         packets = None
         rows = [{'family': family, 'outcome': 'unavailable', 'ms': None} for family in (4, 6)]
     return {'schema': 1, 'ts': int(time.time()), 'protocol': 'tcp-connect',
-            'path': 'physical-interface', 'results': rows, **({'icmp': packets} if packets else {})}
+            'path': 'physical-interface', 'results': rows, **({'icmp6': packets} if packets else {})}
 
 
 def load_config(path):

@@ -22,10 +22,12 @@ export function normalizeWindows(windows,source,now) {
           !integer(c.latency_max,0,5000)||c.latency_sum<c.latency_max||c.latency_sum>c.latency_max*c.latency_n))throw Error('counts');
       if(source==='vps'&&(c.latency_n||c.latency_sum||c.latency_max!==null))throw Error('host latency');
       const check = Object.fromEntries(['id','n','ok','slow','down','missing','latency_sum','latency_n','latency_max'].map(k=>[k,c[k]]));
-      if ('packets_sent' in c || 'packets_received' in c) {
-        if (source !== 'mac' || !validEchoCounts(c.packets_sent, c.packets_received, 60)) throw Error('ICMP counts');
-        check.packets_sent = c.packets_sent;
-        check.packets_received = c.packets_received;
+      for (const prefix of ['packets_', 'ipv6_packets_']) {
+        const sent = prefix + 'sent', received = prefix + 'received';
+        if (!(sent in c || received in c)) continue;
+        if (source !== 'mac' || !validEchoCounts(c[sent], c[received], 60)) throw Error('ICMP counts');
+        check[sent] = c[sent];
+        check[received] = c[received];
       }
       return check;
     });
@@ -35,7 +37,7 @@ export function normalizeWindows(windows,source,now) {
       if(!c||!integer(c.samples,0,20)||!integer(c.peak,0,1e9)||(c.device_peak!==null&&!integer(c.device_peak,0,1e9)))throw Error('connections');
       connections={samples:c.samples,peak:c.peak,device_peak:c.device_peak};
     }else if(w.connections!==undefined)throw Error('scope');
-    if(w.last==null&&(checks.some(c=>c.missing!==20 || c.packets_sent)||connections?.samples>0))throw Error('missing snapshot');
+    if(w.last==null&&(checks.some(c=>c.missing!==20 || c.packets_sent || c.ipv6_packets_sent)||connections?.samples>0))throw Error('missing snapshot');
     const events=w.events??[];
     if(!Array.isArray(events)||events.length>40||events.some(e=>!allowed[source].includes(e?.id)||!integer(e.ts,w.start,w.start+1199)||!['ok','degraded','down','unknown'].includes(e.status)||(e.previous!==null&&!['ok','degraded','down','unknown'].includes(e.previous))))throw Error('events');
     return {start:w.start,checks,...(connections?{connections}:{}),last:w.last??null,events:events.map(e=>({id:e.id,ts:e.ts,status:e.status,previous:e.previous}))};
@@ -98,9 +100,13 @@ export function applyAggregates(records,source,bounds,latest,reports,histories,c
         if(bucket<b.start||bucket>=b.start+72*b.width)continue;
         let row=histories[index].results.find(r=>r.bucket===bucket&&r.check_id===c.id);
         if(!row){row={check_id:c.id,bucket,n:0,ok:0,slow:0,down:0,missing:0,latency_sum:0,latency_n:0,latency_max:null};histories[index].results.push(row);}
-        if (source === 'mac' && c.packets_sent > 0) {
-          row.packets_sent = (row.packets_sent ?? 0) + c.packets_sent;
-          row.packets_received = (row.packets_received ?? 0) + c.packets_received;
+        if (source === 'mac') {
+          for (const prefix of ['packets_', 'ipv6_packets_']) {
+            const sent = prefix + 'sent', received = prefix + 'received';
+            if (!c[sent]) continue;
+            row[sent] = (row[sent] ?? 0) + c[sent];
+            row[received] = (row[received] ?? 0) + c[received];
+          }
         }
         row.aggregated=true;
         for(const key of ['n','ok','slow','down','missing','latency_sum','latency_n'])row[key]+=c[key];
