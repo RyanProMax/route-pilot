@@ -62,3 +62,18 @@ test('storage rejection is optional and never blocks successful online data',asy
   setup(t);Object.defineProperty(globalThis,'sessionStorage',{get(){throw Error('storage denied');},configurable:true});
   const initial=await readInitialData();assert(initial.bundle);assert.equal(initial.error,false);
 });
+
+test('a 503 on the combined status endpoint recovers all three public ranges', async t => {
+  setup(t);
+  const sample = bundle();
+  const paths = [];
+  t.mock.method(globalThis, 'fetch', async path => {
+    paths.push(path);
+    const range = path.split('/').pop().split('.')[0];
+    return range === 'all' ? new Response(null, {status:503}) : Response.json({instanceId:'tokyo', ...sample.windows[range]});
+  });
+  const result = await readStatus('tokyo');
+  assert.deepEqual(paths, ['all','24h','7d','30d'].map(key=>'/status/tokyo/'+key+'.json'));
+  assert.equal(result.windows['7d'].width, 8400);
+  assert.deepEqual(cachedStatus('tokyo'),result);
+});

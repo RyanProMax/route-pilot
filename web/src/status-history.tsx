@@ -8,12 +8,12 @@ export const labels = {
   egress: '固定出口',
   edge4: 'IPv4 入口',
   edge6: 'IPv6 入口',
-  link: '入口建连',
+  link: '入口质量',
   connections: '节点连接数',
 } as const;
 export const states = {
   ok: { label: '健康', color: 'var(--rp-ok)' },
-  degraded: { label: '缓慢', color: 'var(--rp-warning)' },
+  degraded: { label: '警告', color: 'var(--rp-warning)' },
   down: { label: '异常', color: 'var(--rp-down)' },
   unknown: { label: '无数据', color: 'var(--rp-unknown)' },
 } as const;
@@ -52,9 +52,10 @@ export function HistoryBars({ item, data, instanceId, activeTooltip, setActiveTo
             const ping = interval?.ping;
             const rate = ping ? 100 * ping.received / ping.sent : interval?.ipv6ReplyRate ?? interval?.replyRate;
             const replies = rate == null ? '未采集' : Number(rate.toFixed(2)) + '%' + (ping ? '（' + ping.received + '/' + ping.sent + '）' : '');
+            const connections = interval?.connectRate == null ? '未采集' : Number(interval.connectRate.toFixed(2)) + '%';
             const hasConnections = item.id === 'connections' && count !== null;
             const isLink = item.id === 'link';
-            const label = isLink ? '平均建连延时 ' + latency + '，Ping 应答率 ' + replies : hasConnections
+            const label = isLink ? states[status].label + '，平均建连延时 ' + latency + '，建连成功率 ' + connections + '，Ping 应答率 ' + replies : hasConnections
               ? (credentials !== null ? credentials + ' 个凭证，' : '') + count + ' 条连接'
               : states[status].label;
             const height = item.id === 'connections' && count !== null
@@ -66,7 +67,9 @@ export function HistoryBars({ item, data, instanceId, activeTooltip, setActiveTo
                 title={
                   <Flex vertical gap={6} className="history-tooltip">
                     {isLink ? <dl className="link-interval-metrics">
+                      <dt>区间质量</dt><dd><Badge color={states[status].color} text={states[status].label} /></dd>
                       <dt>平均建连延时</dt><dd>{latency}</dd>
+                      <dt>建连成功率</dt><dd>{connections}</dd>
                       <dt>Ping 应答率</dt><dd data-unanswered={rate === 0 || undefined}>{replies}</dd>
                     </dl> : hasConnections ? <Flex align="center" gap={8}>
                       <Badge color={states[status].color} role="img" aria-label={states[status].label} />

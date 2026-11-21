@@ -6,7 +6,7 @@ export type Instance = { id: string; name: string; country?: string };
 type PingCounts = { sent: number; received: number };
 export type Item = {
   id: Key; status: State; at: number | null; latency: number | null; rate: number | null;
-  freshFor?: number; intervals?: ({ meanLatency: number | null; replyRate: number | null; ipv6ReplyRate?: number | null; ping?: PingCounts } | null)[]; history: State[]; value?: string | null; values?: (string | null)[];
+  freshFor?: number; intervals?: ({ meanLatency: number | null; connectRate?: number | null; replyRate: number | null; ipv6ReplyRate?: number | null; ping?: PingCounts } | null)[]; history: State[]; value?: string | null; values?: (string | null)[];
   devices?: number | null; deviceHistory?: (number | null)[];
 };
 export type Summary = {
@@ -21,7 +21,7 @@ export type InitialData = {
   error: boolean; completedAt: number;
 };
 
-async function readJSON(path: string, signal?: AbortSignal) {
+async function readJSON(path: string, signal?: AbortSignal, onServerError?: (signal: AbortSignal) => Promise<unknown>) {
   const controller = new AbortController();
   const abort = () => controller.abort();
   if (signal?.aborted) abort();
@@ -29,6 +29,7 @@ async function readJSON(path: string, signal?: AbortSignal) {
   const timer = setTimeout(abort, 15_000);
   try {
     const response = await fetch(path, { signal: controller.signal });
+    if (response.status >= 500 && onServerError && !controller.signal.aborted) return await onServerError(controller.signal);
     if (!response.ok) throw Error('Status unavailable');
     return await response.json();
   } finally {
@@ -52,7 +53,15 @@ function validInstances(entries: Instance[]) {
 }
 
 export async function readStatus(instanceId: string, signal?: AbortSignal): Promise<StatusBundle> {
-  const next: StatusBundle = await readJSON('/status/' + instanceId + '/all.json', signal);
+  const prefix = '/status/' + instanceId + '/';
+  const next: StatusBundle = await readJSON(prefix + 'all.json', signal, async fallbackSignal => {
+    const entries = await Promise.all(ranges.map(async range => {
+      const summary = await readJSON(prefix + range + '.json', fallbackSignal);
+      if (summary?.instanceId !== instanceId) throw Error('Invalid status');
+      return [range, summary];
+    }));
+    return {instanceId, windows: Object.fromEntries(entries)};
+  });
   if (!validStatus(next, instanceId)) throw Error('Invalid status');
   const previous = cachedStatus(instanceId);
   if (previous && previous.windows['24h'].at > next.windows['24h'].at) return previous;
@@ -81,7 +90,7 @@ function validStatus(next: StatusBundle, instanceId: string) {
         nullableNumber(item.latency) && nullableNumber(item.rate) &&
         (!item.intervals || Array.isArray(item.intervals) && item.intervals.length <= 72 &&
           item.intervals.every(interval => interval === null ||
-            interval && validPing(interval.ping) && nullableNumber(interval.meanLatency) && [interval.replyRate, interval.ipv6ReplyRate].every(
+            interval && validPing(interval.ping) && nullableNumber(interval.meanLatency) && [interval.connectRate, interval.replyRate, interval.ipv6ReplyRate].every(
               rate => rate == null || Number.isFinite(rate) && rate >= 0 && rate <= 100))) &&
         Array.isArray(item.history) && item.history.length <= 72 && item.history.every(state => states.includes(state)) &&
         (!item.values || Array.isArray(item.values) && item.values.every(value => value === null || typeof value === 'string')) &&

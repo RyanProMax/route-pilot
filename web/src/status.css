@@ -25,7 +25,7 @@
   --icon-traffic: #e8ae71;
   --history-row-height: 76px;
   --rp-ok: #57c49d;
-  --rp-warning: #e7b05f;
+  --rp-warning: #ff913d;
   --rp-down: #f58281;
   --rp-unknown: #484848;
   --rp-action: #262626;
@@ -58,7 +58,7 @@
   --icon-disk: #247d71;
   --icon-traffic: #a45f23;
   --rp-ok: #2a906d;
-  --rp-warning: #a66d18;
+  --rp-warning: #ed700e;
   --rp-down: #c55758;
   --rp-unknown: #d6d6d6;
   color-scheme: light;

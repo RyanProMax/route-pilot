@@ -1,5 +1,5 @@
 import { validEchoCounts, normalizeWindows, aggregateStatements, lastWindow, validateWindowSequence, readAggregates, applyAggregates, appendAggregateEvents, invalidateAggregateCache } from './aggregate.mjs';
-import { tcpStatus } from './probe-policy.mjs';
+import { linkIntervalStatus, tcpStatus } from './probe-policy.mjs';
 
 // Dedicated credential can write only the combined link measurement, never VPS health.
 export function normalizeMacProbe(input, now) {
@@ -124,14 +124,16 @@ export function linkSummary({ start, width }, now, latest, buckets) {
     const expected = Math.max(1, Math.ceil((Math.min(now, row.bucket + width) - row.bucket) / 60));
     const valid = row.n - row.missing;
     coverage[slot] = Math.min(100, Math.round(100 * valid / expected));
-    intervals[slot] = {
+    const interval = {
       meanLatency: row.latency_n ? Math.round(row.latency_sum / row.latency_n) : null,
+      connectRate: valid ? 100 * (row.ok + row.slow) / valid : null,
       replyRate: row.packets_sent ? 100 * row.packets_received / row.packets_sent : null,
       ipv6ReplyRate: row.ipv6_packets_sent ? 100 * row.ipv6_packets_received / row.ipv6_packets_sent : null,
       ...(row.ipv6_packets_sent ? {ping: {sent: row.ipv6_packets_sent, received: row.ipv6_packets_received}}
         : row.packets_sent ? {ping: {sent: row.packets_sent, received: row.packets_received}} : {}),
     };
-    history[slot] = row.down ? 'down' : row.slow ? 'degraded' : row.ok ? 'ok' : 'unknown';
+    intervals[slot] = interval;
+    history[slot] = linkIntervalStatus(interval.meanLatency, interval.connectRate, interval.ipv6ReplyRate ?? interval.replyRate);
     samples += valid;
     success += row.ok + row.slow;
     failed += row.down;
