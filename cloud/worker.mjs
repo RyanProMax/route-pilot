@@ -2,6 +2,7 @@ import { normalizeWindows, aggregateStatements, lastWindow, validateWindowSequen
 import { ingestMacProbe } from './mac-probe.mjs';
 import { readStatus } from "./status-cache.mjs";
 import { privateAPI, usageStatements } from "./private-api.mjs";
+import { refreshCloudflareUsage, usageCron } from "./cloudflare-usage.mjs";
 
 
 const clock = () => Math.floor(Date.now() / 1000);
@@ -182,6 +183,7 @@ export default {
     return response({error:"Not found"},404);
   },
   async scheduled(event,env) {
+    if (event.cron === usageCron) return refreshCloudflareUsage(env,event.scheduledTime);
     const now=Math.floor(event.scheduledTime/1000);
     if(event.cron==="15 3 * * *") await prune(env,now);
     else await observe(env,now);

@@ -169,10 +169,11 @@ export function StatusOverview({ initial, privateNode, hidden }: {
 
           <HostMetrics load={load}>
             <MetricCard label="本月剩余流量" icon={ArrowLeftRight} iconColor="var(--icon-traffic)" percent={remaining} color={quotaColor}
-              value={<span className="traffic-amount">{traffic ? <>
+              value={<><span className="traffic-amount">{traffic ? <>
                 <span><small>约 </small>{number(traffic.remainingGB)}<small> GB</small></span>
                 <small className="traffic-total">/ {number(traffic.planGB)} GB</small>
-              </> : '—'}</span>} />
+              </> : '—'}</span>{traffic && <time className="traffic-reset" dateTime={new Date(traffic.resetAt * 1000).toISOString()}
+                title="流量按 UTC 自然月统计，重置时间按本地时区显示">下次重置 {displayTime(traffic.resetAt)}</time>}</>} />
           </HostMetrics>
           <section aria-labelledby="history-title" className="history-section">
             <Card className="history-card">

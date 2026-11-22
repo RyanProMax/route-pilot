@@ -1,21 +1,25 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { createServer, loadEnv } from 'vite';
 import { macPreview } from './dev-link.mjs';
+import { nextUsageUpdate, refreshCloudflareUsage } from '../../cloud/cloudflare-usage.mjs';
 
 const webRoot = fileURLToPath(new URL('..', import.meta.url));
 const cloudRoot = fileURLToPath(new URL('../../cloud/', import.meta.url));
 const require = createRequire(new URL('../../cloud/package.json', import.meta.url));
 const { Miniflare } = require('miniflare');
 const { build } = require('esbuild');
-let worker, server, stopping = false;
+let worker, server, usageTimer, stopping = false;
 
 async function stop() {
   if (stopping) return;
   stopping = true;
+  clearTimeout(usageTimer);
   await Promise.allSettled([server?.close(), worker?.dispose()]);
 }
 process.once('SIGINT', () => void stop());
@@ -28,6 +32,15 @@ try {
   const adminEmail = env.ROUTEPILOT_DEV_ADMIN_EMAIL?.trim().toLowerCase();
   const siteOrigin = (clientFile ? 'https' : 'http') + '://127.0.0.1:5173';
   const localLogin = !clientFile && env.ROUTEPILOT_DEV_LOCAL_LOGIN === '1';
+  // Optional local reader keeps an operator's existing CLI session on the machine
+  // that owns it. Only the normalized usage report crosses into the dev Worker.
+  const reader = env.ROUTEPILOT_DEV_CF_USAGE_READER;
+  const usageBindings = reader
+    ? {CF_USAGE_PREVIEW_SCOPE:'preview:' + createHash('sha256').update(path.resolve(reader)).digest('hex')}
+    : env.ROUTEPILOT_CF_USAGE_TOKEN ? {
+      CF_USAGE_TOKEN:env.ROUTEPILOT_CF_USAGE_TOKEN, CF_USAGE_ACCOUNT_ID:env.ROUTEPILOT_CF_USAGE_ACCOUNT_ID,
+      CF_USAGE_PROJECTS:env.ROUTEPILOT_CF_USAGE_PROJECTS || '{}', CF_USAGE_CYCLE_DAY:env.ROUTEPILOT_CF_USAGE_CYCLE_DAY || '1',
+    } : {};
   const workerOrigin = 'https://127.0.0.1:8787';
   const appOrigin = clientFile ? siteOrigin : workerOrigin;
   let tls, googleBindings = {};
@@ -70,6 +83,7 @@ try {
       INSTANCE_ID: instance.id, INSTANCE_NAME: instance.name, INSTANCE_COUNTRY: instance.country ?? '',
       APP_ORIGIN: appOrigin,
       ...googleBindings,
+      ...usageBindings,
     },
   });
   await worker.ready;
@@ -154,6 +168,19 @@ try {
     },
   });
   await server.listen();
+  if (reader || usageBindings.CF_USAGE_ACCOUNT_ID) {
+    const read = reader ? async () => {
+      const {stdout} = await promisify(execFile)('python', [reader], {timeout:70000, windowsHide:true, maxBuffer:2e6});
+      return JSON.parse(stdout);
+    } : undefined;
+    const tick = async () => {
+      const started = Date.now();
+      try { await refreshCloudflareUsage({...usageBindings, DB:db}, started, read); }
+      catch { console.error('Daily Cloudflare usage collection failed.'); }
+      if (!stopping) usageTimer = setTimeout(tick, Math.max(1, nextUsageUpdate(started) - Date.now()));
+    };
+    void tick();
+  }
   console.log('Route Pilot: ' + siteOrigin + '/');
   console.log('API: local workerd + persistent D1, using cloud/worker.mjs.');
   if (publicOrigin) console.log('Public node data: ' + publicOrigin);

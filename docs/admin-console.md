@@ -21,6 +21,16 @@ The anonymous and administrator views share the white/ink theme and double-path 
 
 ## Enable
 
+### Cloudflare usage
+
+Administrators can open `/?view=cloudflare` to inspect account-wide Free plan allowances and expand each metric for the contributing projects or resources. A server cron collects one daily snapshot at midnight in Asia/Shanghai (16:00 UTC). The private endpoint verifies the administrator session and serves the last successful snapshot from memory or D1. Opening the page does not trigger collection. The local preview also collects a missing daily snapshot on startup. Collection time and product quota resets are independent. Failed daily collection retains the previous snapshot with its timestamp. A rejected or incomplete dataset is marked unavailable.
+
+Configure `CF_USAGE_ACCOUNT_ID` and `CF_USAGE_TOKEN` on the API Worker as secrets. Scope the token to the monitored account. Use Account Analytics Read for GraphQL, plus Workers Scripts Read, Cloudflare Pages Read, D1 Read and Workers KV Storage Read for names, inventory and build history. Keep real identifiers, project mappings and credentials outside source control. For local development use the corresponding `ROUTEPILOT_CF_USAGE_*` names in the ignored `web/.env.local`. A private local Python reader can alternatively be configured through `ROUTEPILOT_DEV_CF_USAGE_READER`; it returns a normalized usage snapshot on stdout.
+
+Set `CF_USAGE_CYCLE_DAY` to the UTC billing-cycle start day for monthly product metrics (default 1). Pages build estimates use the calendar month. Daily allowances reset at midnight UTC. The header shows the last update and the next monthly reset dates. The ≈ symbol marks estimated usage. Each project bar shows the percentage of the account's Free plan allowance it uses. Product limits refer to the Free plan even if the account has upgraded.
+
+An optional private `CF_USAGE_PROJECTS` JSON object groups related resources under a project label, for example `{"worker:example-api":"Example","d1:example-db":"Example"}`. Pages production and preview functions share the project name. When the Worker and Pages binding inventories are complete, storage uses the linked projects' names. Projects sharing a resource appear together, counted once. Other resources use their own name until grouped. Account-only metrics are labeled accordingly.
+
 After deploying migrations/server, configuring Google login and installing device helpers:
 
 ```sh

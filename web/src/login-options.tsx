@@ -1,5 +1,5 @@
 import { Button } from 'antd';
-import { LogIn, SquareTerminal } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import google from './assets/google-g.png';
 
@@ -37,33 +37,31 @@ export function LoginOptions({ open, local, busy, available, notice, onOpenChang
     };
   }, [open, onOpenChange]);
 
-  return <div className="login-launcher" ref={root}
+  return <div className="login-launcher" data-open={open} ref={root}
     onPointerEnter={e => { if (e.pointerType === 'mouse') onOpenChange(true); }}
     onPointerLeave={e => {
       if (e.pointerType === 'mouse' && document.activeElement !== provider.current) onOpenChange(false);
     }}
     onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) onOpenChange(false); }}>
     <Button ref={trigger} className="login-button" icon={<LogIn size={16} />} loading={busy}
-      aria-expanded={open} aria-controls={open ? 'login-options' : undefined}
+      aria-expanded={open} aria-controls="login-options"
       onPointerDown={e => { pointer.current = e.pointerType; }}
       onClick={e => onOpenChange(e.detail > 0 && pointer.current === 'mouse' || !open)}
       onKeyDown={e => {
-        if (e.key !== 'ArrowDown') return;
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowDown') return;
         e.preventDefault();
         onOpenChange(true);
         requestAnimationFrame(() => provider.current?.focus());
       }}>登录</Button>
-    {open && <div className="login-orbit" id="login-options" role="group" aria-label="登录方式">
+    <div className="login-options" id="login-options" role="group" aria-label="登录方式" inert={!open}>
       <button ref={provider} className="login-provider" type="button" aria-disabled={!available || busy}
         aria-label={local ? '使用本地开发账号登录' : '使用 Google 登录'}
         aria-describedby={notice ? 'login-notice' : undefined}
+        onKeyDown={e => { if (e.key === 'ArrowRight') { e.preventDefault(); trigger.current?.focus(); } }}
         onClick={() => { if (available && !busy) onLogin(); }}>
-        <span className="provider-disc">{local
-          ? <SquareTerminal size={23} strokeWidth={1.7} aria-hidden="true" />
-          : <img src={google} width={24} height={24} alt="" />}</span>
-        <span className="provider-caption">{local ? '本地账号' : 'Google'}</span>
+        <img src={google} width={19} height={19} alt="" />
       </button>
-      {notice && <span className="login-notice" id="login-notice" role="status">{notice}</span>}
-    </div>}
+    </div>
+    {open && notice && <span className="login-notice" id="login-notice" role="status">{notice}</span>}
   </div>;
 }

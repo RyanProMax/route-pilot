@@ -52,6 +52,17 @@ async function setup() {
   return { sql, env, call, agent, control };
 }
 const id = () => randomBytes(16).toString("hex");
+test("only the administrator can read Cloudflare usage and the response is private", async () => {
+  const { call, sql } = await setup();
+  try {
+    const path = "/private/cloudflare-usage";
+    assert.equal((await call(path, undefined, {cookie:""})).status, 401);
+    assert.equal((await call(path, {})).status, 405);
+    const response = await call(path);
+    assert.match(response.headers.get("cache-control"), /no-store/);
+    assert.deepEqual(await response.json(), {status:"unconfigured"});
+  } finally { sql.close(); }
+});
 test("admin and control roles are separate; malformed and cross-origin requests fail closed", async () => {
   const { sql, call, agent } = await setup();
   try {

@@ -1,4 +1,5 @@
 import { latestAggregate } from './aggregate.mjs';
+import { cloudflareUsage } from './cloudflare-usage.mjs';
 import { macProbeSummaries } from './mac-probe.mjs';
 import { authenticatedAccount, digest, privateHeaders } from "./auth.mjs";
 const json = (value, status = 200) =>
@@ -71,7 +72,7 @@ export async function adminAPI(request, env, now, helpers) {
   const url = new URL(request.url),
     path = url.pathname;
   if (
-    !["/private/console", "/private/credentials"].includes(path) &&
+    !["/private/console", "/private/credentials", "/private/cloudflare-usage"].includes(path) &&
     !path.startsWith("/private/control/") &&
     !/^\/private\/credentials\/[a-f0-9]{24}\/access$/.test(path)
   )
@@ -259,6 +260,11 @@ export async function adminAPI(request, env, now, helpers) {
   }
   const account = await authenticatedAccount(request, env, now);
   if (!account) return json({ error: "Unauthorized" }, 401);
+  if (path === "/private/cloudflare-usage") {
+    if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
+    try { return json(await cloudflareUsage(env, now * 1000)); }
+    catch { return json({ error: "Usage unavailable" }, 503); }
+  }
   if (path === "/private/console" && request.method === "GET") {
     const month = new Date(now * 1000).toISOString().slice(0, 7);
     const results = await db.batch([

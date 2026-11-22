@@ -29,7 +29,7 @@ test('unavailable or invalid traffic never invents a full progress bar', () => {
 
 test('traffic belongs to the current UTC month, not the browser timezone', () => {
   const monthEnd = Date.UTC(2026, 11, 1) / 1000;
-  assert(remainingTraffic(quota, true, monthEnd - 1));
+  assert.equal(remainingTraffic(quota, true, monthEnd - 1).resetAt, monthEnd);
   assert.equal(remainingTraffic(quota, true, monthEnd), null);
-  assert(remainingTraffic({ ...quota, month: '2026-12' }, true, monthEnd));
+  assert.equal(remainingTraffic({ ...quota, month: '2026-12' }, true, monthEnd).resetAt, Date.UTC(2027, 0, 1) / 1000);
 });

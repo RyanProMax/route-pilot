@@ -8,5 +8,7 @@ export function remainingTraffic(traffic: TrafficQuota | null | undefined, fresh
       traffic.month !== new Date(now * 1000).toISOString().slice(0, 7)) return null;
   const percent = traffic.remainingGB / traffic.planGB * 100;
   const level = percent < 10 ? 'down' : percent < 25 ? 'degraded' : 'ok';
-  return { ...traffic, percent, level } as const;
+  const monthStart = new Date(traffic.month + '-01T00:00:00Z');
+  const resetAt = monthStart.setUTCMonth(monthStart.getUTCMonth() + 1) / 1000;
+  return { ...traffic, percent, level, resetAt } as const;
 }

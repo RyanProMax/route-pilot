@@ -11,15 +11,15 @@ import {
   Form,
   Input,
   Layout,
-  Menu,
   Select,
   Skeleton,
   Table,
   Tag,
   Tooltip,
 } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { motion, useReducedMotion } from "motion/react";
 import {
   Check,
   ChevronDown,
@@ -35,6 +35,7 @@ import {
 import zhCN from "antd/locale/zh_CN";
 import { componentTheme } from "./theme";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./beui/tabs";
+import { SPRING_LAYOUT } from "./beui/ease";
 import { StatusOverview } from "./status";
 import type { InitialData } from "./data";
 import { measurementFresh } from "./freshness";
@@ -45,7 +46,8 @@ import { LoginOptions } from "./login-options";
 import "./status.css";
 import "./app.css";
 
-type Page = "overview" | "credentials" | "activity";
+type Page = "overview" | "credentials" | "activity" | "cloudflare";
+const CloudflareUsage = lazy(() => import("./cloudflare-usage").then(m => ({default:m.CloudflareUsage})));
 type Credential = {
   id: string;
   label: string;
@@ -93,6 +95,7 @@ const titles: Record<Page, string> = {
   overview: "运行概览",
   credentials: "凭证管理",
   activity: "操作记录",
+  cloudflare: "Cloudflare 用量",
 };
 const actionNames: Record<string, string> = {
   create: "创建凭证",
@@ -142,7 +145,7 @@ const time = (n: number | null) =>
     : "—";
 const pageFromURL = (): Page => {
   const v = new URLSearchParams(location.search).get("view");
-  return v === "credentials" || v === "activity" ? v : "overview";
+  return v === "credentials" || v === "activity" || v === "cloudflare" ? v : "overview";
 };
 const requestId = () => crypto.randomUUID().replaceAll("-", "");
 const msg: Record<string, string> = {
@@ -165,6 +168,32 @@ function Brand({ onHome }: { onHome: () => void }) {
       <span>Route Pilot</span>
     </a>
   );
+}
+
+const navigationPages = ["overview", "credentials", "cloudflare"] as const;
+type NavigationPage = (typeof navigationPages)[number];
+
+function AdminNavigation({ current, navigate }: { current: NavigationPage; navigate: (value: Page) => void }) {
+  const reduceMotion = useReducedMotion();
+  return <nav className="app-navigation" aria-label="管理导航">
+    <motion.span className="app-navigation-pill" aria-hidden="true" layout={!reduceMotion}
+      transition={{ layout: SPRING_LAYOUT }} style={{ gridColumn: navigationPages.indexOf(current) + 1, borderRadius: 999 }}/>
+    {navigationPages.map((item, index) => (
+      <a key={item} href={item === "overview" ? "/" : "/?view=" + item} style={{ gridColumn: index + 1 }}
+        aria-current={item === current ? "page" : undefined}
+        onKeyDown={event => {
+          const links = event.currentTarget.parentElement!.querySelectorAll("a");
+          const next = event.key === "ArrowRight" ? (index + 1) % links.length
+            : event.key === "ArrowLeft" ? (index + links.length - 1) % links.length : undefined;
+          if (next !== undefined) { event.preventDefault(); links[next].focus(); }
+        }}
+        onClick={event => {
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          event.preventDefault();
+          navigate(item);
+        }}>{item === "overview" ? "首页" : titles[item]}</a>
+    ))}
+  </nav>;
 }
 
 function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; light: boolean; toggleTheme: () => void }) {
@@ -267,9 +296,13 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
     if (signal.aborted || epoch !== sessionEpoch.current) return false;
     if (response.status === 401 || response.status === 403) {
       const prompt = wasAuthenticated.current;
-      const requestedManagement = pageFromURL() !== "overview";
+      const requested = pageFromURL();
       forgetSession(prompt);
-      if (requestedManagement && !prompt) setLoginOpen(true);
+      if (requested !== "overview" && !prompt) {
+        setPage(requested);
+        history.replaceState(null, "", "/?view=" + requested);
+        setLoginOpen(true);
+      }
       return false;
     }
     if (!response.ok) throw Error();
@@ -582,10 +615,7 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
       <Layout className="site-body status-page">
         <header className="site-header app-header">
           <Brand onHome={() => navigate("overview")} />
-          {isAdmin && <Menu className="app-navigation" mode="horizontal" aria-label="管理导航"
-            selectedKeys={[activePage === 'activity' ? 'credentials' : activePage]}
-            items={[{key:'overview',label:'首页'},{key:'credentials',label:'凭证管理'}]}
-            onClick={({key}) => navigate(key as Page)} />}
+          {isAdmin && <AdminNavigation current={activePage === "activity" ? "credentials" : activePage} navigate={navigate}/>}
           <div className="header-actions">
           <Button shape="circle" type="text" className="theme-button" onClick={toggleTheme}
             aria-label={light ? "切换到深色主题" : "切换到浅色主题"} title={light ? "切换到深色主题" : "切换到浅色主题"}
@@ -615,7 +645,10 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
           </div>
         </header>
         <StatusOverview initial={initial} privateNode={isAdmin ? data : null} hidden={activePage !== 'overview'} />
-        {isAdmin && activePage !== 'overview' && <main className="console-main">
+        {isAdmin && activePage === 'cloudflare' && <Suspense fallback={<main className="console-main"><Skeleton active /></main>}>
+          <CloudflareUsage key={data.account.email} onExpired={() => forgetSession(true)} />
+        </Suspense>}
+        {isAdmin && (activePage === 'credentials' || activePage === 'activity') && <main className="console-main">
           <h1>{titles[page]}</h1>
           {error && !data && (
             <Alert
