@@ -7,6 +7,7 @@
 :root[data-theme="light"] .console-brand img { filter: invert(1); }
 .header-actions { display: flex; align-items: center; justify-self: end; grid-column: 3; gap: 10px; }
 .header-actions .ant-btn { height: 36px; border-radius: 999px; }
+.session-placeholder { width: 96px; height: 36px; border-radius: 999px; background: var(--rp-selected); }
 .header-actions .theme-button { color: var(--rp-muted); width: 36px; }
 .header-actions .account-button { gap: 7px; padding-inline: 17px; color: var(--rp-ink); background: transparent; border: 1px solid var(--rp-line); font-weight: 400; }
 .header-actions .account-button:not(:disabled):is(:hover, :active, :focus-visible) { color: var(--rp-ink); background: transparent; border-color: var(--rp-muted); }

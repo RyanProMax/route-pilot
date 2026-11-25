@@ -55,11 +55,15 @@ test('valid Google callback creates an RP session; replay, logout, expiry and di
     assert.equal(calls,1);assert.equal(results.filter(r=>r.headers.get('location')==='/').length,1);
     const success=results.find(r=>r.headers.get('location')==='/'),cookie=cookiePart(success,'__Host-routepilot');
     assert.equal(success.status,303);assert.match(success.headers.get('cache-control'),/no-store/);
+    const sessionCookie=success.headers.getSetCookie().find(x=>x.startsWith('__Host-routepilot='));
+    for(const flag of ['HttpOnly','Secure','SameSite=Lax','Path=/','Max-Age=604800'])assert(sessionCookie.includes(flag));
     const session=sql.prepare('SELECT * FROM rp_sessions').get();assert.equal(session.hash,await digest(cookie.split('=')[1]));
-    assert.equal(session.expires,now+8*3600);assert.equal(sql.prepare('SELECT google_sub FROM rp_accounts').get().google_sub,'google-subject-1');
+    assert.equal(session.expires,now+604800);assert.equal(sql.prepare('SELECT google_sub FROM rp_accounts').get().google_sub,'google-subject-1');
     const read=()=>req('/private/overview',{headers:{cookie}});
     assert.equal((await privateAPI(read(),env,now)).status,200);
-    assert.equal((await authenticatedAccount(read(),env,now+8*3600)),null);
+    assert.ok(await authenticatedAccount(read(),env,now+604799));
+    assert.equal((await authenticatedAccount(read(),env,now+604800)),null);
+    assert.equal(sql.prepare('SELECT expires FROM rp_sessions').get().expires,now+604800);
     sql.exec('UPDATE rp_accounts SET disabled=1');assert.equal((await privateAPI(read(),env,now)).status,401);
     sql.exec("UPDATE rp_accounts SET disabled=0,role='viewer'");assert.equal((await privateAPI(read(),env,now)).status,401);
     sql.exec("UPDATE rp_accounts SET role='admin'");

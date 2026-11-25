@@ -1,5 +1,6 @@
 import {createRemoteJWKSet, jwtVerify} from 'jose';
 
+const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const encoder = new TextEncoder();
 const hex = bytes => Array.from(bytes, x => x.toString(16).padStart(2,'0')).join('');
 export const digest = async value => hex(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(value))));
@@ -57,7 +58,7 @@ function finish(error,sessionToken) {
   const headers=new Headers(privateHeaders);
   headers.set('Location','/'+(error?'?login='+error:''));
   headers.append('Set-Cookie',cookie(flowName,'',0));
-  if(sessionToken)headers.append('Set-Cookie',cookie(sessionName,sessionToken,8*3600));
+  if(sessionToken)headers.append('Set-Cookie',cookie(sessionName,sessionToken,SESSION_TTL_SECONDS));
   return new Response(null,{status:303,headers});
 }
 
@@ -123,7 +124,7 @@ export async function authAPI(request,env,now,{fetchToken=fetch,resolveKey=googl
     if(!account)return finish('denied');
     const token=random(),old=cookieValue(request,sessionName);
     const statements=[env.DB.prepare(`INSERT INTO rp_sessions(hash,account_id,expires)
-      SELECT ?,id,? FROM rp_accounts WHERE id=? AND disabled=0 AND role='admin'`).bind(await digest(token),now+8*3600,account.id)];
+      SELECT ?,id,? FROM rp_accounts WHERE id=? AND disabled=0 AND role='admin'`).bind(await digest(token),now+SESSION_TTL_SECONDS,account.id)];
     if(old)statements.unshift(env.DB.prepare('DELETE FROM rp_sessions WHERE hash=?').bind(await digest(old)));
     await env.DB.batch(statements);
     return finish(null,token);

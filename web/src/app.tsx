@@ -606,7 +606,8 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
     },
   ];
   const isAdmin = auth === true && data?.account.role === "admin";
-  const activePage = isAdmin ? page : "overview";
+  const checkingSession = auth === null;
+  const activePage = isAdmin || checkingSession ? page : "overview";
   const localLogin = ready === false && import.meta.env.DEV && import.meta.env.ROUTEPILOT_LOCAL_LOGIN;
   const loginNotice = loginError || (ready === "unreachable" ? "暂时无法连接登录服务，正在重试"
     : ready === false && !localLogin ? "Google 登录尚未配置" : "");
@@ -620,7 +621,7 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
           <Button shape="circle" type="text" className="theme-button" onClick={toggleTheme}
             aria-label={light ? "切换到深色主题" : "切换到浅色主题"} title={light ? "切换到深色主题" : "切换到浅色主题"}
             icon={light ? <Moon size={17} /> : <Sun size={18} />} />
-          {isAdmin ? <Dropdown
+          {checkingSession ? <span className="session-placeholder" role="status" aria-label={error ? "暂时无法确认登录状态，正在重试" : "正在确认登录状态"} /> : isAdmin ? <Dropdown
             trigger={["click"]}
             menu={{
               items: [
@@ -645,6 +646,11 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
           </div>
         </header>
         <StatusOverview initial={initial} privateNode={isAdmin ? data : null} hidden={activePage !== 'overview'} />
+        {checkingSession && activePage !== 'overview' && <main className="console-main" aria-busy={!error}>
+          <h1>{titles[activePage]}</h1>
+          {error ? <Alert className="console-alert" title={error} type="warning" showIcon /> :
+            <div className="console-loading"><Skeleton active paragraph={{ rows: 4 }} /></div>}
+        </main>}
         {isAdmin && activePage === 'cloudflare' && <Suspense fallback={<main className="console-main"><Skeleton active /></main>}>
           <CloudflareUsage key={data.account.email} onExpired={() => forgetSession(true)} />
         </Suspense>}
