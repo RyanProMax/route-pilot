@@ -27,13 +27,13 @@ export type PrivateNode = {
   load: HostLoad | null;
 };
 
-export function StatusOverview({ initial, privateNode, hidden }: {
-  initial: InitialData; privateNode?: PrivateNode | null; hidden?: boolean;
+export function StatusOverview({ initial, pending, privateNode, hidden }: {
+  initial: InitialData; pending?: Promise<InitialData>; privateNode?: PrivateNode | null; hidden?: boolean;
 }) {
   const [instances, setInstances] = useState(initial.instances);
   const [instanceId, setInstanceId] = useState<string | null>(initial.instances[0]?.id ?? null);
   const [instanceError, setInstanceError] = useState(initial.instanceError);
-  const [catalogPending, setCatalogPending] = useState(initial.instanceError || !initial.completedAt);
+  const [catalogPending, setCatalogPending] = useState(!pending && (initial.instanceError || !initial.completedAt));
   const [range, setRange] = useState<Range>('24h');
   const [bundle, setBundle] = useState<StatusBundle | null>(initial.bundle);
   const data = bundle?.instanceId === instanceId ? bundle.windows[range] : null;
@@ -55,6 +55,20 @@ export function StatusOverview({ initial, privateNode, hidden }: {
   }, []);
 
   useEffect(() => {
+    if (!pending) return;
+    let active = true;
+    void pending.then(next => {
+      if (!active) return;
+      const id = next.instances[0]?.id;
+      initialPoll.current = { id, completedAt: next.bundle ? next.completedAt : 0 };
+      setInstances(next.instances); setInstanceId(id ?? null); setBundle(next.bundle);
+      setInstanceError(next.instanceError); setError(next.error);
+      setCatalogPending(next.instanceError);
+    });
+    return () => { active = false; };
+  }, [pending]);
+
+  useEffect(() => {
     if (!catalogPending) return;
     return pollVisible(async signal => {
       const entries = await readInstances(signal);
@@ -68,7 +82,7 @@ export function StatusOverview({ initial, privateNode, hidden }: {
 
   useEffect(() => {
     if (!instanceId) return;
-    const initialDelay = initialPoll.current.id === instanceId && initial.completedAt && !initial.error
+    const initialDelay = initialPoll.current.id === instanceId && initialPoll.current.completedAt
       ? Math.max(0, 60_000 - (Date.now() - initialPoll.current.completedAt)) : 0;
     initialPoll.current.id = undefined;
     return pollVisible(async signal => {

@@ -1,5 +1,6 @@
 import { createElement as h } from 'react';
 import { Flex, Skeleton } from 'antd';
+import { ChevronDown, LogIn, Moon, Sun } from 'lucide-react';
 
 const block = (width, height, key) => h('div', {
   key, className: 'skeleton-block', style: { width, height },
@@ -7,11 +8,25 @@ const block = (width, height, key) => h('div', {
 
 // Rendered by the build as well as React: the first HTML already has the complete loading layout.
 export function StatusSkeleton() {
-  return h('div', { className: 'status-page page-loading', role: 'status', 'aria-label': '正在加载节点状态', 'aria-busy': true },
-    h('header', { className: 'site-header', 'aria-hidden': true },
-      h(Flex, { gap: 10, align: 'center', className: 'skeleton-brand' }, block(30, 30), block(145, 24)),
-      block(80, 44)),
-    h('main', { 'aria-hidden': true },
+  return h('div', { className: 'status-page page-loading' },
+    h('header', { className: 'site-header app-header' },
+      h('a', { href: '/', className: 'console-brand', 'aria-label': 'Route Pilot 状态首页' },
+        h('img', { src: '/routepilot-mark.svg', width: 32, height: 32, alt: '' }), h('span', null, 'Route Pilot')),
+      h('nav', { className: 'app-navigation', 'aria-label': '管理导航', 'data-shell-nav': '', hidden: true },
+        h('span', { className: 'app-navigation-pill', 'aria-hidden': true, 'data-shell-pill': '' }),
+        ...[['overview', '首页'], ['credentials', '凭证管理'], ['cloudflare', 'Cloudflare 用量']].map(([view, label], i) =>
+          h('a', { key: view, href: view === 'overview' ? '/' : '/?view=' + view, 'data-shell-tab': view,
+            style: { gridColumn: i + 1 } }, label))),
+      h('div', { className: 'header-actions' },
+        h('span', { className: 'shell-control shell-theme', 'aria-hidden': true },
+          h(Sun, { size: 18, className: 'shell-sun' }), h(Moon, { size: 17, className: 'shell-moon' })),
+        h('span', { className: 'ant-btn account-button shell-control', 'data-shell-account': 'admin', hidden: true },
+          '管理员', h(ChevronDown, { size: 13, strokeWidth: 1.65, 'aria-hidden': true })),
+        h('span', { className: 'shell-control shell-login', 'data-shell-account': 'guest', hidden: true },
+          h(LogIn, { size: 16, 'aria-hidden': true }), '登录'))),
+    h('main', { className: 'console-main', 'data-shell-private': '', hidden: true, 'aria-busy': true },
+      h('h1', { 'data-shell-private-title': '' }), h(Skeleton, { active: true, paragraph: { rows: 4 } })),
+    h('main', { 'data-shell-overview': '', 'aria-hidden': true, 'aria-busy': true },
       h('section', { className: 'node-overview' },
         block(128, 36), h('div', { className: 'instance-navigation' }, block(136, 38))),
       h('section', { className: 'host-metrics' },

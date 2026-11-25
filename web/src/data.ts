@@ -121,12 +121,18 @@ export function cachedStatus(instanceId: string): StatusBundle | null {
   try { return validStatus(cached, instanceId) && Date.now() - cached.windows['24h'].at * 1000 <= SNAPSHOT_TTL ? cached : null; } catch { return null; }
 }
 
-export async function readInitialData(signal?: AbortSignal): Promise<InitialData> {
+export function cachedInitialData(): InitialData | null {
   const cachedInstances = loadSnapshot('instances') as Instance[];
   if (validInstances(cachedInstances)) {
     const cached = cachedStatus(cachedInstances[0].id);
     if (cached) return { instances: cachedInstances, bundle: cached, instanceError: false, error: false, completedAt: 0 };
   }
+  return null;
+}
+
+export async function readInitialData(signal?: AbortSignal): Promise<InitialData> {
+  const cached = cachedInitialData();
+  if (cached) return cached;
   let instances: Instance[] = [];
   let bundle: StatusBundle | null = null;
   let instanceError = false, error = false;

@@ -196,10 +196,10 @@ function AdminNavigation({ current, navigate }: { current: NavigationPage; navig
   </nav>;
 }
 
-function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; light: boolean; toggleTheme: () => void }) {
+function RoutePilotApp({ initial, startup, initialAuth, light, toggleTheme }: { initial: InitialData; startup?: Promise<InitialData>; initialAuth: boolean | null; light: boolean; toggleTheme: () => void }) {
   const { message, modal } = AntApp.useApp();
   const [data, setData] = useState<ConsoleData | null>(null),
-    [auth, setAuth] = useState<boolean | null>(null),
+    [auth, setAuth] = useState(initialAuth),
     [ready, setReady] = useState<boolean | null | "unreachable">(null);
   const [page, setPage] = useState<Page>(pageFromURL),
     [error, setError] = useState(""),
@@ -232,9 +232,9 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
       )[value ?? ""] ?? ""
     );
   });
-  const [loginOpen, setLoginOpen] = useState(() => new URLSearchParams(location.search).has("login"));
+  const [loginOpen, setLoginOpen] = useState(() => new URLSearchParams(location.search).has("login") || (initialAuth === false && pageFromURL() !== "overview"));
   const sessionEpoch = useRef(0);
-  const wasAuthenticated = useRef(false);
+  const wasAuthenticated = useRef(initialAuth === true);
   const confirmation = useRef<ReturnType<typeof modal.confirm> | null>(null);
   function forgetSession(prompt = false) {
     sessionEpoch.current++;
@@ -605,7 +605,7 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
       ),
     },
   ];
-  const isAdmin = auth === true && data?.account.role === "admin";
+  const isAdmin = auth === true;
   const checkingSession = auth === null;
   const activePage = isAdmin || checkingSession ? page : "overview";
   const localLogin = ready === false && import.meta.env.DEV && import.meta.env.ROUTEPILOT_LOCAL_LOGIN;
@@ -625,7 +625,7 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
             trigger={["click"]}
             menu={{
               items: [
-                { key: "account", label: data?.account.email, disabled: true },
+                ...(data ? [{ key: "account", label: data.account.email, disabled: true }] : []),
                 {
                   key: "logout",
                   icon: <LogOut size={15} />,
@@ -645,14 +645,14 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
             onLogin={localLogin ? loginLocally : login} />}
           </div>
         </header>
-        <StatusOverview initial={initial} privateNode={isAdmin ? data : null} hidden={activePage !== 'overview'} />
+        <StatusOverview initial={initial} pending={startup} privateNode={isAdmin ? data : null} hidden={activePage !== 'overview'} />
         {checkingSession && activePage !== 'overview' && <main className="console-main" aria-busy={!error}>
           <h1>{titles[activePage]}</h1>
           {error ? <Alert className="console-alert" title={error} type="warning" showIcon /> :
             <div className="console-loading"><Skeleton active paragraph={{ rows: 4 }} /></div>}
         </main>}
         {isAdmin && activePage === 'cloudflare' && <Suspense fallback={<main className="console-main"><Skeleton active /></main>}>
-          <CloudflareUsage key={data.account.email} onExpired={() => forgetSession(true)} />
+          <CloudflareUsage onExpired={() => forgetSession(true)} />
         </Suspense>}
         {isAdmin && (activePage === 'credentials' || activePage === 'activity') && <main className="console-main">
           <h1>{titles[page]}</h1>
@@ -947,7 +947,7 @@ function RoutePilotApp({ initial, light, toggleTheme }: { initial: InitialData; 
     </Layout>
   );
 }
-function ThemedApp({ initial }: { initial: InitialData }) {
+function ThemedApp({ initial, startup, initialAuth }: { initial: InitialData; startup?: Promise<InitialData>; initialAuth: boolean | null }) {
   const [light, setLight] = useState(document.documentElement.dataset.theme === 'light');
   const theme = useMemo(() => componentTheme(light), [light]);
   function toggleTheme() {
@@ -958,9 +958,11 @@ function ThemedApp({ initial }: { initial: InitialData }) {
     setLight(!light);
   }
   return <ConfigProvider theme={theme} locale={zhCN}>
-      <AntApp><RoutePilotApp initial={initial} light={light} toggleTheme={toggleTheme} /></AntApp>
+      <AntApp><RoutePilotApp initial={initial} startup={startup} initialAuth={initialAuth} light={light} toggleTheme={toggleTheme} /></AntApp>
     </ConfigProvider>;
 }
-export function mount(initial: InitialData) {
-  createRoot(document.getElementById("root")!).render(<ThemedApp initial={initial} />);
+export function mount(initial: InitialData, startup?: Promise<InitialData>) {
+  const root = document.getElementById("root")!;
+  const session = root.dataset.session;
+  createRoot(root).render(<ThemedApp initial={initial} startup={startup} initialAuth={session === "admin" ? true : session === "guest" ? false : null} />);
 }

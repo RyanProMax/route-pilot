@@ -61,15 +61,23 @@ test('valid Google callback creates an RP session; replay, logout, expiry and di
     assert.equal(session.expires,now+604800);assert.equal(sql.prepare('SELECT google_sub FROM rp_accounts').get().google_sub,'google-subject-1');
     const read=()=>req('/private/overview',{headers:{cookie}});
     assert.equal((await privateAPI(read(),env,now)).status,200);
+    const check=(at,headers={cookie})=>privateAPI(req('/private/session',{headers}),env,at);
+    const active=await check(now+604799);
+    assert.equal(active.status,204);assert.equal(await active.text(),'');
+    assert.match(active.headers.get('cache-control'),/private, no-store/);
+    assert.equal((await check(now,{})).status,401);
+    assert.equal((await check(now+604800)).status,401);
     assert.ok(await authenticatedAccount(read(),env,now+604799));
     assert.equal((await authenticatedAccount(read(),env,now+604800)),null);
     assert.equal(sql.prepare('SELECT expires FROM rp_sessions').get().expires,now+604800);
     sql.exec('UPDATE rp_accounts SET disabled=1');assert.equal((await privateAPI(read(),env,now)).status,401);
+    assert.equal((await check(now)).status,401);
     sql.exec("UPDATE rp_accounts SET disabled=0,role='viewer'");assert.equal((await privateAPI(read(),env,now)).status,401);
     sql.exec("UPDATE rp_accounts SET role='admin'");
     assert.equal((await authAPI(req('/private/session',{method:'DELETE',headers:{cookie,origin:'https://attacker.example'}}),env,now)).status,403);
     assert.equal((await authAPI(req('/private/session',{method:'DELETE',headers:{cookie,origin}}),env,now)).status,200);
     assert.equal((await privateAPI(read(),env,now)).status,401);
+    assert.equal((await check(now)).status,401);
     assert.equal((await privateAPI(req('/private/session',{method:'POST',headers:{origin},body:'old-key'}),env,now)).status,404);
   }finally{sql.close();}
 });

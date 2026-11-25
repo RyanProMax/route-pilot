@@ -58,4 +58,5 @@ def cloud_configs(c):
     if c.get('aggregate_start'):
         worker['vars']['AGGREGATE_START'] = str(c['aggregate_start'])
     site.update(name=c.get('web_worker','routepilot-web'),account_id=c['account_id'],routes=[{'pattern':host+'/*','zone_name':zone}])
+    site['services'][0]['service'] = worker['name']
     return worker, site

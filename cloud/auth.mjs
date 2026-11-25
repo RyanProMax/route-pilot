@@ -66,6 +66,10 @@ function finish(error,sessionToken) {
 export async function authAPI(request,env,now,{fetchToken=fetch,resolveKey=googleKeys}={}) {
   const url=new URL(request.url),path=url.pathname;
   if(path==='/private/auth' && request.method==='GET' && !url.search)return json({provider:'google',ready:googleReady(env)});
+  if(path==='/private/session' && request.method==='GET' && !url.search){
+    const account=await authenticatedAccount(request,env,now);
+    return new Response(null,{status:account?204:401,headers:privateHeaders});
+  }
   if(path==='/private/session' && request.method==='DELETE' && !url.search){
     if(!originOK(request,env))return json({error:'Forbidden'},403);
     const value=cookieValue(request,sessionName),flow=cookieValue(request,flowName);

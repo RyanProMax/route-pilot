@@ -73,7 +73,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="routepilot-edge-") as directory:
         stage = Path(directory)
         (stage / "cloud").mkdir()
-        for name in ("wrangler.json", "worker.mjs", "aggregate.mjs", "probe-policy.mjs", "mac-probe.mjs", "status-site.json", "public-status.mjs", "status-cache.mjs", "private-api.mjs", "admin-api.mjs", "auth.mjs", "cloudflare-usage.mjs", "package.json", "package-lock.json"):
+        for name in ("wrangler.json", "worker.mjs", "aggregate.mjs", "probe-policy.mjs", "mac-probe.mjs", "status-site.json", "web-shell.mjs", "public-status.mjs", "status-cache.mjs", "private-api.mjs", "admin-api.mjs", "auth.mjs", "cloudflare-usage.mjs", "package.json", "package-lock.json"):
             shutil.copyfile(ROOT / "cloud" / name, stage / "cloud" / name)
         shutil.copytree(ROOT / "cloud/migrations", stage / "cloud/migrations")
         (stage/"cloud/wrangler.json").write_text(json.dumps(config))

@@ -1,9 +1,12 @@
-import { readInitialData } from './data';
+import { cachedInitialData, readInitialData } from './data';
 import './status.css';
+import './app.css';
 
-// Fetch while React and the component library download, rather than after mounting them.
-void Promise.all([readInitialData(), import('./app')]).then(([initial, app]) => {
-  app.mount(initial);
+// Start public data and the app together; a slow status response must not block the header.
+const cached = cachedInitialData();
+const pending = cached ? undefined : readInitialData();
+void import('./app').then(app => {
+  app.mount(cached ?? { instances: [], bundle: null, instanceError: false, error: false, completedAt: 0 }, pending);
 }).catch(() => {
   const root = document.getElementById('root');
   if (root) {
